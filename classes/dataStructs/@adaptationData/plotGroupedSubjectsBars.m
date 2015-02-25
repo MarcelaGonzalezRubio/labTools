@@ -67,9 +67,9 @@ function [figHandle,allData]=plotGroupedSubjectsBars(adaptDataList,label,removeB
                 hold on
                 for group=1:Ngroups
                     [veryEarlyPoints,earlyPoints,latePoints,pEarly,pLate,pChange,pSwitch]=adaptationData.getGroupedData(auxList{group},label(l),conds,removeBiasFlag,N2,N3,Ne);
-                    veryEarlyPoints=squeeze(nanmean(veryEarlyPoints,2)); %Averaging over strides for each sub
-                    earlyPoints=squeeze(nanmean(earlyPoints,2)); %Averaging over strides for each sub
-                    latePoints=squeeze(nanmean(latePoints,2)); %Averaging over strides for each sub
+                    veryEarlyPoints=permute(nanmean(veryEarlyPoints,2),[1,4,2,3]); %Averaging over strides for each sub
+                    earlyPoints=permute(nanmean(earlyPoints,2),[1,4,2,3]); %Averaging over strides for each sub
+                    latePoints=permute(nanmean(latePoints,2),[1,4,2,3]); %Averaging over strides for each sub
                     %plot bars
                     if Ngroups==1  && isempty(significanceThreshold)%Only plotting first N1 strides AND first N2 strides if there is only one group, and no stats are being shown
                         bar((1:3:3*nConds)-.25+(group-1)/Ngroups,nanmean(veryEarlyPoints,2),.15/Ngroups,'FaceColor',[.85,.85,.85].^group)
@@ -162,14 +162,17 @@ function [figHandle,allData]=plotGroupedSubjectsBars(adaptDataList,label,removeB
             linkaxes(ah,'x')
             axis tight
             condDes = this.metaData.conditionName;
+            if ~isempty(legendNames) && isa(legendNames{1},'cell') %Case in which the list of subjects is of the form {{'name1','name2',...}}, so there is actually a single group. Without this fix it fails to write the legend.
+                legendNames=legendNames{1};
+            end
             if Ngroups==1 && isempty(significanceThreshold)
                 legend([{['Very early (first ' num2str(N1) ' strides)'],['Early (first ' num2str(N2) ' strides)'],['Late (last ' num2str(N3) ' (-' num2str(Ne) ') strides)']}, legendNames ]);
             elseif Ngroups==1
                 legend([{['Early (first ' num2str(N2) ' strides)'],['Late (last ' num2str(N3) ' (-' num2str(Ne) ') strides)']}, legendNames ]);
             else
                 legStr={};
-                for group=1:Ngroups  
-                    load([adaptDataList{group}{1,1}])
+                for group=1:Ngroups
+				    load([adaptDataList{group}{1,1}])
                     group2=adaptData.subData.ID;
                     spaces=find(group2==' ');
                     abrevGroup=group2(spaces+1);

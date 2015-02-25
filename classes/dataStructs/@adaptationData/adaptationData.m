@@ -243,7 +243,7 @@ classdef adaptationData
 			earlyPoints=[];
             veryEarlyPoints=[];
             latePoints=[];
-            N1=3;all(cellfun(@(x) isa(x,'char'),conds))
+            N1=3;%all(cellfun(@(x) isa(x,'char'),conds))
             if isa(conds,'char')
                 conds={conds};
             elseif ~isa(conds,'cell') && ~all(cellfun(@(x) isa(x,'char'),conds))
@@ -302,9 +302,9 @@ classdef adaptationData
                     end
                 else
                     disp(['Condition ' conds{i} ' not found for subject ' this.subData.ID])
-                    veryEarlyPoints(i,:,1:N1)=NaN;
-                    earlyPoints(i,:,1:N2)=NaN;
-                    latePoints(i,:,1:N3)=NaN;
+                    veryEarlyPoints(i,1:N1,:)=NaN;
+                    earlyPoints(i,1:N2,:)=NaN;
+                    latePoints(i,1:N3,:)=NaN;
                 end
             end
         end
@@ -385,6 +385,7 @@ classdef adaptationData
                     minM=min(dataPoints(:));
                 end
                 if nargin>3 && trialMarkerFlag==1 %Color background with trial info
+                    axes(ah(l))
                     last=1;
                     colorNow=[0,0,0];
                     for i=1:length(trialBreaks)
@@ -538,12 +539,15 @@ classdef adaptationData
                 a=load(adaptDataList{subject});
                 aux=fields(a);
                 this=a.(aux{1});
-                [veryEarlyPoints(:,:,:,subject),earlyPoints(:,:,:,subject),latePoints(:,:,:,subject)]=getEarlyLateData(this,label,conds,removeBiasFlag,earlyNumber,lateNumber,exemptLast);
+                nConds=length(conds);
+                nLabs=length(label);
+                [veryEarlyPoints(1:nConds,:,1:nLabs,subject),earlyPoints(1:nConds,1:earlyNumber,1:nLabs,subject),latePoints(1:nConds,1:lateNumber,1:nLabs,subject)]=getEarlyLateData(this,label,conds,removeBiasFlag,earlyNumber,lateNumber,exemptLast);
             %Indexes in data correspond to: condition, stride,label,subject
             end
             %Compute some stats
             aux1=squeeze(nanmean(earlyPoints,2)); %Averaging across strides
             aux2=squeeze(nanmean(latePoints,2));
+            pSwitch=[];
             for i=1:size(aux1,1) %For all conditions requested
                 for j=1:size(aux1,1)
                     if i~=j
@@ -641,7 +645,7 @@ classdef adaptationData
                 for subject=1:length(auxList{group})
                     %Load subject
                     load(auxList{group}{subject});
-                   % adaptData = adaptData.removeBias;
+                    adaptData = adaptData.removeBias;
                     for c=1:nConds
                         conditionIdxs=getConditionIdxsFromName(adaptData,{conditions{c}});
                         dataPts=adaptData.getParamInCond(params,adaptData.metaData.conditionName{conditionIdxs});
@@ -684,7 +688,7 @@ classdef adaptationData
 %                       end
 
                     %to plot the max number of pts in each condition:
-                    [maxPts,loc]=nanmin(numPts.(cond{c})); %Note: a colliding version had nanmin here instead of nanmax. I believe this is the correct form.
+                    [maxPts,loc]=nanmax(numPts.(cond{c})); %Note: a colliding version had nanmin here instead of nanmax. I believe this is the correct form.
                     while maxPts>1.25*nanmax(numPts.(cond{c})([1:loc-1 loc+1:end]))
                         numPts.(cond{c})(loc)=nanmean(numPts.(cond{c})([1:loc-1 loc+1:end])); %do not include min in mean
                         [maxPts,loc]=nanmax(numPts.(cond{c}));
@@ -751,12 +755,12 @@ classdef adaptationData
                             for s=1:length(subsToPlot)
                                 subInd=find(ismember(subjects,subsToPlot{s}));
                                 %to plot as dots
-                                Li{group}(s)=plot(x,indiv(group).(params{p}).(cond{c})(subInd,:),'o','MarkerSize',3,'MarkerEdgeColor',ColorOrder(subInd,:),'MarkerFaceColor',ColorOrder(subInd,:));
+                                %  Li{group}(s)=plot(x,indiv(group).(params{p}).(cond{c})(subInd,:),'o','MarkerSize',3,'MarkerEdgeColor',ColorOrder(subInd,:),'MarkerFaceColor',ColorOrder(subInd,:));
                                 %to plot as lines
-                                %Li{group}(s)=plot(x,indiv(group).(params{p}).(cond{c})(subInd,:),LineOrder{group},'color',ColorOrder(subInd,:));
+                                Li{group}(s)=plot(x,indiv(group).(params{p}).(cond{c})(subInd,:),LineOrder{group},'color',ColorOrder(subInd,:));
                                 legendStr{group}=subsToPlot;
                             end
-                           % plot(x,y,'o','MarkerSize',3,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',[0.7 0.7 0.7].^group)                            
+                            plot(x,y,'o','MarkerSize',3,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',[0.7 0.7 0.7].^group)                            
                         else
                             if Ngroups==1 && ~(size(params,1)>1)
                                 [Pa, Li{c}]=nanJackKnife(x,y,E,ColorOrder(c,:),ColorOrder(c,:)+0.5.*abs(ColorOrder(c,:)-1),0.7);                                
@@ -771,17 +775,15 @@ classdef adaptationData
                             else
                                 [Pa, Li{g}]=nanJackKnife(x,y,E,ColorOrder(g,:)./Cdiv,ColorOrder(g,:)./Cdiv+0.5.*abs(ColorOrder(g,:)./Cdiv-1),0.7);                                
                                 set(Li{g},'Clipping','off')
-                                H=get(Li{g},'Parent');
-                                
+                                H=get(Li{g},'Parent'); 
                                 load([adaptDataList{g}{1,1}])
                                 group2=adaptData.subData.ID;
                                 spaces=find(group2==' ');
                                 abrevGroup=group2(spaces+1);
                                 group2=group2(ismember(group2,['A':'Z' 'a':'z']));
                                 abrevGroup=[group2];
-                                %legendStr{g}={['group' num2str(g)]};
-                                
-                                legendStr{g}={['group ' abrevGroup]};
+                               legendStr{g}={['group ' abrevGroup]};								
+                               %legendStr{g}={['group' num2str(g)]};
                             end
                             set(Pa,'Clipping','off')
                             set(H,'Layer','top')

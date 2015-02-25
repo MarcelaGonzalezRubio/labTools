@@ -13,7 +13,7 @@ in=trialData;
 % one "stride" contains the events: SHS,FTO,FHS,STO,SHS2,FTO2
 % see lab tools user guide for a helpful visual of events.
 paramlabels = {'good',...       Flag indicating whether the stride has events in the expected order or not
-    'intiTime',...
+    'initTime',...
     'finalTime',...
     'swingTimeSlow',...         time from STO to SHS2 (in s)
     'swingTimeFast',...         time from FTO to FHS (in s)
@@ -46,7 +46,7 @@ paramlabels = {'good',...       Flag indicating whether the stride has events in
     'stepLengthSlow',...        distance between ankle markers (relative to avg hip marker) at SHS2 (in mm)
     'stepLengthFast',...        distance between ankel markers (relative to hip) at FHS (in mm)
     'alphaSlow',...             ankle placement of slow leg at SHS2 (realtive to avg hip marker) (in mm)
-    'alphaTemp',...             ankle placement of slow leg at SHS (realtive to avg hip marker) (in mm)
+	'alphaTemp',...             ankle placement of slow leg at SHS (realtive to avg hip marker) (in mm)
     'alphaFast',...             ankle placement of fast leg at FHS (in mm)
     'alphaAngSlow',...          slow leg angle (hip to ankle with respect to vertical) at SHS2 (in deg)
     'alphaAngFast',...          fast leg angle at FHS (in deg)
@@ -54,7 +54,7 @@ paramlabels = {'good',...       Flag indicating whether the stride has events in
     'betaFast',...              ankle placement of fast leg at FTO2 (in mm)
 	'XSlow',...                 ankle postion of the slow leg @FHS (in mm)
     'XFast',...                 ankle position of Fast leg @SHS (in mm)
-    'RFastPos',...              Ratio of FTO/FHS
+	'RFastPos',...              Ratio of FTO/FHS
     'RSloWPos',...              Ratio of STO/SHS
     'RFastPosSHS',...           Ratio of fank@SHS/FHS
     'RSlowPosFHS',...           Ratio of sank@FHS/SHS
@@ -310,7 +310,7 @@ for step=1:Nstrides
                 direction(t)=1;
             end
             
-             hipPos(t)= mean([sHip(indSHS,2) fHip(indSHS,2)]);
+            hipPos(t)= mean([sHip(indSHS,2) fHip(indSHS,2)]);
                          
             %rotate coordinates to be aligned wiht walking dierection                      
             sRotation = calcangle(sAnk(indSHS2,1:2),sAnk(indSTO,1:2),[sAnk(indSTO,1)-100*direction(t) sAnk(indSTO,2)])-90;
@@ -327,19 +327,14 @@ for step=1:Nstrides
             %Compute mean (across the two markers) hip position (in fore-aft axis)
             meanHipPos=nanmean([sHip(:,2) fHip(:,2)],2);
             meanHipPos2D=[nanmean([sHip(:,1) fHip(:,1)],2) meanHipPos];
-            %Compute ankle position relative to hip position 
-            sAnkPos=sAnk(:,2)-meanHipPos;
-            fAnkPos=fAnk(:,2)-meanHipPos;
-%             sAnkPos=sAnk(:,2)-sHip(:,2);
-%             fAnkPos=fAnk(:,2)-fHip(:,2);
-            %Compute ankle position relative to average hip position 
-            sAnkPosmean=sAnk(:,2)-meanHipPos;
-            fAnkPosmean=fAnk(:,2)-meanHipPos;
+            %Compute ankle position relative to average hip position
+            sAnkPos=sAnk(:,2)-(sHip(:,2));
+            fAnkPos=fAnk(:,2)-(fHip(:,2));
+            
+%             sAnkPos=sAnk(:,2)-meanHipPos;
+%             fAnkPos=fAnk(:,2)-meanHipPos;
             sAnkPos2D=sAnk(:,[1 2])-meanHipPos2D;
             fAnkPos2D=fAnk(:,[1 2])-meanHipPos2D;
-            %Compute ankle position relative with the origen of treadmill
-            sAnkPosWOHip=sAnk(:,2);
-            fAnkPosWOHip=fAnk(:,2);
             
             % Set all steps to have the same slope (a negative slope during stance phase is assumed)
             if sAnk(indSHS2,2)<sAnk(indSTO,2)
@@ -384,8 +379,8 @@ for step=1:Nstrides
             %swing range
             swingRangeSlow(t)=sAnkPos(indSHS2)-sAnkPos(indSTO);
             swingRangeFast(t)=fAnkPos(indFHS)-fAnkPos(indFTO);
-            
-             %Ratio TO/HS
+			
+			%Ratio TO/HS
             RFastPos(t)=abs(betaFast(t)/alphaFast(t));
             RSloWPos(t)=abs(betaSlow(t)/ alphaTemp(t)); 
             
@@ -393,7 +388,6 @@ for step=1:Nstrides
             RFastPosSHS(t)=abs(XFast(t)/alphaFast(t));
             RSlowPosFHS(t)=abs(XSlow(t)/alphaTemp(t));
             
-			
             
             %Spatial parameters - in degrees
             
@@ -429,9 +423,9 @@ for step=1:Nstrides
             Serror(t)=alphaRatioSlow(t)-alphaRatioFast(t);
             SerrorOld(t)=alphaRatioFast(t)/alphaRatioSlow(t);
             Sgoal(t)=(stanceRangeAngFast(t)-stanceRangeAngSlow(t))/(stanceRangeAngFast(t)+stanceRangeSlow(t));
-            centerSlow=(alphaAngSlow(t)+betaAngSlow(t))/2;
-            centerFast=(alphaAngFast(t)+betaAngFast(t))/2;
-            angleOfOscillationAsym(t)=centerFast-centerSlow;            
+            centerSlow(t)=(alphaAngSlow(t)+betaAngSlow(t))/2;
+            centerFast(t)=(alphaAngFast(t)+betaAngFast(t))/2;
+            angleOfOscillationAsym(t)=(centerFast(t)-centerSlow(t));            
 
             %phase shift (using angles)
             slowlimb=sAngle(indSHS:indSHS2);
