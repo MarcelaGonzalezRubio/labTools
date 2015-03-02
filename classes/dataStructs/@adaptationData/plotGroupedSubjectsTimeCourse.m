@@ -81,6 +81,7 @@ function [figHandle,allData]=plotGroupedSubjectsTimeCourse(adaptDataList,label,r
                         yCoord=nanmean(latePoints(i,:,:),3);
                         yStd=nanstd(latePoints(i,:,:),[],3);
                         hh=patch([xCoord,xCoord(end:-1:1)],[yCoord-yStd,yCoord(end:-1:1)+yStd(end:-1:1)],[.6,.6,.6]);
+%                         hh=patch([xCoord,xCoord(end:-1:1)],[yCoord,yCoord(end:-1:1)],[.6,.6,.6]);
                         plot(xCoord,yCoord,'LineWidth',3,'Color',colorGroups{group})
                         if plotIndividualsFlag==1
                            for j=1:size(earlyPoints,3)

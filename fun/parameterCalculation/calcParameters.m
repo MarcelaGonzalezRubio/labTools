@@ -111,6 +111,8 @@ paramlabels = {'good',...       Flag indicating whether the stride has events in
     'stanceSpeedSlow',...       Ankle relative to hip, during ipsilateral stance
     'stanceSpeedFast',...       Ankle relative to hip, during ipsilateral stance
     'avgRotation',...           Angle that the coordinates were rotated by
+    'centerSlow',...           alphaAngSlow(t)+betaAngSlow(t))/2;
+    'centerFast',...           alphaAngFast(t)+betaAngFast(t))/2;
     }; 
 
 %make the time series have a time vector as small as possible so that
