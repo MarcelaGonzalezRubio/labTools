@@ -566,7 +566,7 @@ classdef adaptationData
         end
         
         %function [avg, indiv]=plotAvgTimeCourse(adaptDataList,params,conditions,binwidth,indivFlag,indivSubs)
-        function figHandle=plotAvgTimeCourse(adaptDataList,params,conditions,binwidth,indivFlag,indivSubs)
+        function figHandle=plotAvgTimeCourse(adaptDataList,params,conditions,binwidth,indivFlag,indivSubs,biofeedback)
 		
         %adaptDataList must be cell array of 'param.mat' file names
         %params is cell array of parameters to plot. List with commas to
@@ -628,7 +628,20 @@ classdef adaptationData
             elseif nargin>5 && isa(indivSubs,'char')
                 indivSubs{1}={indivSubs};
             end
-            
+            %% DULCE
+            if nargin==7
+                if biofeedback==1 &&  strcmp(params{p},'alphaFast')
+                    w=adaptData.getParamInCond('TargetHitR',conditions{c});
+                elseif biofeedback==1 &&  strcmp(params{p},'alphaSlow')
+                    w=adaptData.getParamInCond('TargetHit',conditions{c});
+                elseif biofeedback==0
+                    biofeedback=[];
+                else
+                    w=adaptData.getParamInCond('TargetHit',conditions{c});
+                    
+                end
+            end
+        %%
             %Initialize plot
             [ah,figHandle]=optimizedSubPlot(size(params,2),4,1);
             legendStr={};
@@ -746,6 +759,19 @@ classdef adaptationData
                         condLength=length(y);
                         x=Xstart:Xstart+condLength-1;
                         
+%                     if nargin==7 
+%                     if biofeedback==1 &&  strcmp(params{p},'alphaFast') 
+%                          w=adaptData.getParamInCond('TargetHitR',conditions{c});
+%                     elseif biofeedback==1 &&  strcmp(params{p},'alphaSlow')  
+%                         w=adaptData.getParamInCond('TargetHit',conditions{c});
+%                     elseif biofeedback==0
+%                         biofeedback=[];
+%                     else 
+%                        w=adaptData.getParamInCond('TargetHit',conditions{c});
+%                        
+%                     end
+%                     end
+                                            
                         if nargin>4 && ~isempty(indivFlag) && indivFlag
                             if nargin>5 && ~isempty(indivSubs)
                                 subsToPlot=indivSubs{group};                                
@@ -762,7 +788,7 @@ classdef adaptationData
                             end
                             plot(x,y,'o','MarkerSize',3,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',[0.7 0.7 0.7].^group)                            
                         else
-                            if Ngroups==1 && ~(size(params,1)>1)
+                            if Ngroups==1 && ~(size(params,1)>1) && nargin<7 
                                 [Pa, Li{c}]=nanJackKnife(x,y,E,ColorOrder(c,:),ColorOrder(c,:)+0.5.*abs(ColorOrder(c,:)-1),0.7);                                
                                 set(Li{c},'Clipping','off')
                                 H=get(Li{c},'Parent');                                
@@ -789,6 +815,15 @@ classdef adaptationData
 %                                 end
                                %legendStr{g}={['group' num2str(g)]};
                             end
+                            %%
+                            %DULCE
+                            if Ngroups==1 && ~(size(params,1)>1) && nargin==7 
+                                [Pa, Li{c}]=nanJackKnife(x,y,E,ColorOrder(c,:),ColorOrder(c,:)+0.5.*abs(ColorOrder(c,:)-1),0.7,w);                                
+                                set(Li{c},'Clipping','off')
+                                H=get(Li{c},'Parent');                                
+                                legendStr={conditions};
+                            end
+                            %%
                             set(Pa,'Clipping','off')
                             set(H,'Layer','top')
                         end                        
