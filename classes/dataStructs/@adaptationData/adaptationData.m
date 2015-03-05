@@ -755,9 +755,9 @@ classdef adaptationData
                             for s=1:length(subsToPlot)
                                 subInd=find(ismember(subjects,subsToPlot{s}));
                                 %to plot as dots
-                                %  Li{group}(s)=plot(x,indiv(group).(params{p}).(cond{c})(subInd,:),'o','MarkerSize',3,'MarkerEdgeColor',ColorOrder(subInd,:),'MarkerFaceColor',ColorOrder(subInd,:));
+                                 Li{group}(s)=plot(x,indiv(group).(params{p}).(cond{c})(subInd,:),'o','MarkerSize',3,'MarkerEdgeColor',ColorOrder(subInd,:),'MarkerFaceColor',ColorOrder(subInd,:));
                                 %to plot as lines
-                                Li{group}(s)=plot(x,indiv(group).(params{p}).(cond{c})(subInd,:),LineOrder{group},'color',ColorOrder(subInd,:));
+%                                 Li{group}(s)=plot(x,indiv(group).(params{p}).(cond{c})(subInd,:),LineOrder{group},'color',ColorOrder(subInd,:));
                                 legendStr{group}=subsToPlot;
                             end
                             plot(x,y,'o','MarkerSize',3,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',[0.7 0.7 0.7].^group)                            
@@ -782,11 +782,11 @@ classdef adaptationData
                                 abrevGroup=group2(spaces+1);
                                 group2=group2(ismember(group2,['A':'Z' 'a':'z']));
                                 abrevGroup=[group2];
-                                if g==3
-                               legendStr{g}={['group ' abrevGroup 'old']};
-                                else
+%                                 if g==3
+%                                legendStr{g}={['group ' abrevGroup 'old']};
+%                                 else
                                      legendStr{g}={['group ' abrevGroup]};
-                                end
+%                                 end
                                %legendStr{g}={['group' num2str(g)]};
                             end
                             set(Pa,'Clipping','off')
