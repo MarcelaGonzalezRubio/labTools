@@ -138,7 +138,7 @@ switch(nargin)
 %         PatchColor = varargin{6};
 %         Opacity= varargin{7};
           case 7,
-        % If there are 6 inputs then
+        % If there are 7 inputs then
         x = varargin{1};
         y = varargin{2};
         E = varargin{3};
