@@ -155,20 +155,27 @@ end
 Xcoords = [x x(end:-1:1)];
 Ycoords = [U L(end:-1:1)];
 
-Pa = patch(Xcoords,Ycoords,PatchColor);
-set(Pa,'linestyle','-','linewidth',1,'EdgeColor',LineColor,'FaceAlpha',Opacity);
+
+
 hold on;
 %Li = plot(x,y,'color',LineColor,'linewidth',2);
 if size(varargin,2)<7
-Li = plot(x,y,'o','MarkerSize',5,'LineWidth',1,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',LineColor);
+    Pa = patch(Xcoords,Ycoords,PatchColor);
+    set(Pa,'linestyle','-','linewidth',1,'EdgeColor',LineColor,'FaceAlpha',Opacity);
+    Li = plot(x,y,'o','MarkerSize',5,'LineWidth',1,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',LineColor);
 elseif size(varargin,2)==7
-for l=1:length(x)
-    if w(l)==1;
-Li = plot(x(l),y(l),'o','MarkerSize',5,'LineWidth',1,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',[0 0 0]);
-    else 
-Li = plot(x(l),y(l),'o','MarkerSize',5,'LineWidth',1,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',LineColor);
+%     Pa = patch(Xcoords,Ycoords,'w');
+Pa=[];
+    for l=1:length(x)
+        
+        if w(l)==0;
+            Li = plot(x(l),y(l),'o','MarkerSize',5,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',[0 0 0]);
+            %Li = plot(x(l),y(l),'o','MarkerSize',5,'LineWidth',1,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',[0 0 0]);
+        else
+            Li = plot(x(l),y(l),'o','MarkerSize',5,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',LineColor);
+            % Li = plot(x(l),y(l),'o','MarkerSize',5,'LineWidth',1,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',LineColor);
+        end
     end
-end
 end
     
 hold on;

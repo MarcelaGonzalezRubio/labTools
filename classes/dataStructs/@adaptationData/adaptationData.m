@@ -629,18 +629,21 @@ classdef adaptationData
                 indivSubs{1}={indivSubs};
             end
             %% DULCE
-            if nargin==7
-                if biofeedback==1 &&  strcmp(params{p},'alphaFast')
-                    w=adaptData.getParamInCond('TargetHitR',conditions{c});
-                elseif biofeedback==1 &&  strcmp(params{p},'alphaSlow')
-                    w=adaptData.getParamInCond('TargetHit',conditions{c});
-                elseif biofeedback==0
-                    biofeedback=[];
-                else
-                    w=adaptData.getParamInCond('TargetHit',conditions{c});
-                    
-                end
-            end
+%             q=[];
+%             if nargin==7
+%                 load(adaptDataList{1})
+%                 q=q+1;
+%                 if biofeedback==1 &&  strcmp(params{q},'alphaFast')
+%                     w=adaptData.getParamInCond('TargetHitR',conditions{q});
+%                 elseif biofeedback==1 &&  strcmp(params{q},'alphaSlow')
+%                     w=adaptData.getParamInCond('TargetHit',conditions{q});
+%                 elseif biofeedback==0
+%                     biofeedback=[];
+%                 else
+%                     w=adaptData.getParamInCond('TargetHit',conditions{c});
+%                     
+%                 end
+%             end
         %%
             %Initialize plot
             [ah,figHandle]=optimizedSubPlot(size(params,2),4,1);
@@ -658,7 +661,22 @@ classdef adaptationData
                 for subject=1:length(auxList{group})
                     %Load subject
                     load(auxList{group}{subject});
-                    adaptData = adaptData.removeBias;
+                      %% DULCE
+%             if nargin==7
+%                     load(adaptDataList{1})
+%                 if biofeedback==1 &&  strcmp(params{c},'alphaFast')
+%                     w=adaptData.getParamInCond('TargetHitR',conditions{c});
+%                 elseif biofeedback==1 &&  strcmp(params{c},'alphaSlow')
+%                     w=adaptData.getParamInCond('TargetHit',conditions{c});
+%                 elseif biofeedback==0
+%                     biofeedback=0;
+%                 else
+%                     w=adaptData.getParamInCond('TargetHit',conditions{c});
+%                     
+%                 end
+%             end
+                %%
+                adaptData = adaptData.removeBias;
                     for c=1:nConds
                         conditionIdxs=getConditionIdxsFromName(adaptData,{conditions{c}});
                         dataPts=adaptData.getParamInCond(params,adaptData.metaData.conditionName{conditionIdxs});
@@ -758,20 +776,22 @@ classdef adaptationData
                         E=se(group).(params{p}).(cond{c});                        
                         condLength=length(y);
                         x=Xstart:Xstart+condLength-1;
-                        
-%                     if nargin==7 
-%                     if biofeedback==1 &&  strcmp(params{p},'alphaFast') 
-%                          w=adaptData.getParamInCond('TargetHitR',conditions{c});
-%                     elseif biofeedback==1 &&  strcmp(params{p},'alphaSlow')  
-%                         w=adaptData.getParamInCond('TargetHit',conditions{c});
-%                     elseif biofeedback==0
-%                         biofeedback=[];
-%                     else 
-%                        w=adaptData.getParamInCond('TargetHit',conditions{c});
-%                        
-%                     end
-%                     end
-                                            
+               %%
+               %DULCE
+                    if nargin>6 &&  ~isempty(biofeedback) 
+                        load(adaptDataList{1})
+                    if biofeedback==1 &&  strcmp(params{p},'alphaFast') 
+                         w=adaptData.getParamInCond('TargetHitR',conditions{c});
+                    elseif biofeedback==1 &&  strcmp(params{p},'alphaSlow')  
+                        w=adaptData.getParamInCond('TargetHit',conditions{c});
+                    elseif biofeedback==0
+                        biofeedback=[];
+                    else 
+                       w=adaptData.getParamInCond('TargetHit',conditions{c});
+                       
+                    end
+                    end
+              %%                              
                         if nargin>4 && ~isempty(indivFlag) && indivFlag
                             if nargin>5 && ~isempty(indivSubs)
                                 subsToPlot=indivSubs{group};                                
@@ -788,7 +808,7 @@ classdef adaptationData
                             end
                             plot(x,y,'o','MarkerSize',3,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',[0.7 0.7 0.7].^group)                            
                         else
-                            if Ngroups==1 && ~(size(params,1)>1) && nargin<7 
+                            if Ngroups==1 && ~(size(params,1)>1) && isempty(biofeedback) 
                                 [Pa, Li{c}]=nanJackKnife(x,y,E,ColorOrder(c,:),ColorOrder(c,:)+0.5.*abs(ColorOrder(c,:)-1),0.7);                                
                                 set(Li{c},'Clipping','off')
                                 H=get(Li{c},'Parent');                                
@@ -798,7 +818,7 @@ classdef adaptationData
                                 set(Li{(group-1)*size(params,1)+p},'Clipping','off')
                                 H=get(Li{(group-1)*size(params,1)+p},'Parent');  
                                 legendStr{(group-1)*size(params,1)+p}=legStr;
-                            else
+                            elseif biofeedback~=1
                                 [Pa, Li{g}]=nanJackKnife(x,y,E,ColorOrder(g,:)./Cdiv,ColorOrder(g,:)./Cdiv+0.5.*abs(ColorOrder(g,:)./Cdiv-1),0.7);                                
                                 set(Li{g},'Clipping','off')
                                 H=get(Li{g},'Parent'); 
@@ -817,7 +837,7 @@ classdef adaptationData
                             end
                             %%
                             %DULCE
-                            if Ngroups==1 && ~(size(params,1)>1) && nargin==7 
+                            if Ngroups==1 && ~(size(params,1)>1) && ~isempty(biofeedback)
                                 [Pa, Li{c}]=nanJackKnife(x,y,E,ColorOrder(c,:),ColorOrder(c,:)+0.5.*abs(ColorOrder(c,:)-1),0.7,w);                                
                                 set(Li{c},'Clipping','off')
                                 H=get(Li{c},'Parent');                                
