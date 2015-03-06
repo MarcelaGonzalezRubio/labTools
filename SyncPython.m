@@ -1,5 +1,6 @@
 function syncronizationPython(subject,typeBiofeedback)
 %typeBiofeedback dymamics=1, Statics=0.
+
 load([subject 'params.mat'])
 load([subject '.mat'])
 load([subject 'RAW.mat'])
