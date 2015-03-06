@@ -1,4 +1,4 @@
-function syncronizationPython(subject,typeBiofeedback)
+function SyncPython(subject,typeBiofeedback)
 %typeBiofeedback dymamics=1, Statics=0.
 
 load([subject 'params.mat'])
