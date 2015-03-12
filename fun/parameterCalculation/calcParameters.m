@@ -113,6 +113,10 @@ paramlabels = {'good',...       Flag indicating whether the stride has events in
     'avgRotation',...           Angle that the coordinates were rotated by
     'centerSlow',...           alphaAngSlow(t)+betaAngSlow(t))/2;
     'centerFast',...           alphaAngFast(t)+betaAngFast(t))/2;
+    'indSHSD',...
+    'indFHSD',...
+    'timeSHSD',...
+    'timeFHSD',...
     }; 
 
 %make the time series have a time vector as small as possible so that
@@ -291,16 +295,20 @@ for step=1:Nstrides
             %frequencies differ
             CF=f_kin/f_events;
             indSHS=round(indSHS*CF);
+            indSHSD(t)=indSHS;
             indFTO=round(indFTO*CF);
             indFHS=round(indFHS*CF);
+            indFHSD(t)=indFHS;
             indSTO=round(indSTO*CF);
             indSHS2=round(indSHS2*CF);
             indFTO2=round(indFTO2*CF);
             
             %Compute times with new indices:
             timeSHS=eventsTime(indSHS*(1/CF));
+            timeSHSD(t)=timeSHS;
             timeFTO=eventsTime(indFTO*(1/CF));
             timeFHS=eventsTime(indFHS*(1/CF));
+            timeFHSD(t)=timeFHS;
             timeSTO=eventsTime(indSTO*(1/CF));
             timeSHS2=eventsTime(indSHS2*(1/CF));
             timeFTO2=eventsTime(indFTO2*(1/CF));
