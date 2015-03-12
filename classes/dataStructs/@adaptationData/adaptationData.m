@@ -676,7 +676,7 @@ classdef adaptationData
 %                 end
 %             end
                 %%
-                adaptData = adaptData.removeBias;
+%                 adaptData = adaptData.removeBias;
                     for c=1:nConds
                         conditionIdxs=getConditionIdxsFromName(adaptData,{conditions{c}});
                         dataPts=adaptData.getParamInCond(params,adaptData.metaData.conditionName{conditionIdxs});
@@ -700,6 +700,7 @@ classdef adaptationData
                     end
                     s=s+1;
                 end
+                clear adaptData
             end           
             
             %plot the average value of parameter(s) entered over time, across all subjects entered.
@@ -776,6 +777,10 @@ classdef adaptationData
                         E=se(group).(params{p}).(cond{c});                        
                         condLength=length(y);
                         x=Xstart:Xstart+condLength-1;
+                        
+                        if group==2
+                            x=150:150+condLength-1;
+                        end
                %%
                %DULCE
                     if nargin>6 &&  ~isempty(biofeedback) 
@@ -801,7 +806,7 @@ classdef adaptationData
                             for s=1:length(subsToPlot)
                                 subInd=find(ismember(subjects,subsToPlot{s}));
                                 %to plot as dots
-                                 Li{group}(s)=plot(x,indiv(group).(params{p}).(cond{c})(subInd,:),'o','MarkerSize',3,'MarkerEdgeColor',ColorOrder(subInd,:),'MarkerFaceColor',ColorOrder(subInd,:));
+                                 Li{group}(s)=plot(x,indiv(group).(params{p}).(cond{c})(subInd,:),'o','MarkerSize',6,'MarkerEdgeColor',ColorOrder(subInd,:),'MarkerFaceColor',ColorOrder(subInd,:));
                                 %to plot as lines
 %                                 Li{group}(s)=plot(x,indiv(group).(params{p}).(cond{c})(subInd,:),LineOrder{group},'color',ColorOrder(subInd,:));
                                 legendStr{group}=subsToPlot;
@@ -818,11 +823,15 @@ classdef adaptationData
                                 set(Li{(group-1)*size(params,1)+p},'Clipping','off')
                                 H=get(Li{(group-1)*size(params,1)+p},'Parent');  
                                 legendStr{(group-1)*size(params,1)+p}=legStr;
-                            elseif biofeedback~=1
+                            elseif isempty(biofeedback)
                                 [Pa, Li{g}]=nanJackKnife(x,y,E,ColorOrder(g,:)./Cdiv,ColorOrder(g,:)./Cdiv+0.5.*abs(ColorOrder(g,:)./Cdiv-1),0.7);                                
                                 set(Li{g},'Clipping','off')
-                                H=get(Li{g},'Parent'); 
+                                H=get(Li{g},'Parent');
+                                if g>=2
                                 load([adaptDataList{g}{1,1}])
+                                else
+                                load([adaptDataList{g}])
+                                end
                                 group2=adaptData.subData.ID;
                                 spaces=find(group2==' ');
                                 abrevGroup=group2(spaces+1);
@@ -858,7 +867,7 @@ classdef adaptationData
                             %end
                             line([lineX; lineX],ylim,'color','k')
                             xticks=lineX+diff([lineX Xstart+condLength])./2;                    
-                            set(gca,'fontsize',8,'Xlim',[0 Xstart+condLength],'Xtick', xticks, 'Xticklabel', cond)
+                            set(gca,'fontsize',8,'Xlim',[0 Xstart+condLength],'Xtick', xticks, 'Xticklabel', conditions)
                         end
                         hold off
                     end
