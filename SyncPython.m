@@ -1,6 +1,7 @@
-function SyncPython(subject,typeBiofeedback)
+% function SyncPython(subject,typeBiofeedback)
 %typeBiofeedback dymamics=1, Statics=0.
-
+subject='PST07';
+typeBiofeedback=0;
 load([subject 'params.mat'])
 load([subject '.mat'])
 load([subject 'RAW.mat'])
@@ -15,8 +16,8 @@ w=0;
 StepsR=[];
 StepsL=[];
 Steps=[];
-for p=1:length(condition)
-    
+% for p=1:length(condition)
+    for p=1:2
     
     j=[];
     GRRz=[];
@@ -56,11 +57,14 @@ for p=1:length(condition)
     Lscale=[];
     RscaleGood=[];
     LscaleGood=[];
-    
-    
+    GoodR=[];
+    GoodL=[];
+    Rtarget2Good=[];
+    Ltarget2Good=[];
     
     if strcmp(condition{p},'Gradual adaptation') || strcmp(condition{p},'Re-adaptation')
-        w=w+1;
+%         w=w+1;
+w=1;
         load(['Pyton' num2str(w) '.mat'])
         z=expData.metaData.getConditionIdxsFromName(condition{p});
         j=adaptData.metaData.trialsInCondition{z};
@@ -74,8 +78,8 @@ for p=1:length(condition)
         NexusLlowFreq=resample(GRLz,1,10);
         
         %Creating NaN matrix with the lenght of the data
-        newData=nan((((outmat(end,1)-outmat(1,1)))+1),15);
-        newData2=nan((((outmat(end,1)-outmat(1,1)))+1),15);
+        newData=nan((((outmat(end,1)-outmat(1,1)))+1),size(header,2));
+        newData2=nan((((outmat(end,1)-outmat(1,1)))+1),size(header,2));
         
         %Making frames from Pyton start at 1
         outmat(:,1)=outmat(:,1)-outmat(1,1)+1;
@@ -115,14 +119,23 @@ for p=1:length(condition)
             NexusLlowFreq =NexusLlowFreq(abs(timeDiff)+1:end,1:end);
         end
         
-        
-        % figure()
-        % plot(NexusRlowFreq,'b')
-        % hold on
-        % plot(newData(:,2), 'r')
-        % plot(newData2(:,2), 'g')
-        % legend('Nexus','Interpolate Pyton','Pyton')
-        % title('Sync of R Force plate data')
+        hola=labTimeSeries(newData2,0,0.01,{'FrameNumber','Rfz','Lfz','RHS','LHS','RGORB','LGORB','Ralpha','Lalpha','Rscale','Lscale','RHIPY','LHIPY','RANKY','LANKY','targetR','targetL'});
+
+%          figure()
+%         plot(NexusRlowFreq,'b')
+%         hold on
+%         plot(newData(:,2), 'r')
+%         plot(newData2(:,2), 'g')
+%         legend('Nexus','Interpolate Pyton','Pyton')
+%         title('Sync of R Force plate data')
+%                 
+%         figure()
+%         plot(NexusLlowFreq,'b')
+%         hold on
+%         plot(newData(:,3), 'r')
+%         plot(newData2(:,3), 'g')
+%         legend('Nexus','Interpolate Pyton','Pyton')
+%         title('Sync of L Force plate data')
         %
         NexusLlowFreq=NexusLlowFreq(1:length(newData));
         NexusRlowFreq=NexusRlowFreq(1:length(newData));
@@ -132,6 +145,7 @@ for p=1:length(condition)
         %data is used to make sure that we dont take in consideration extras HS.
         [LHSnexus,RHSnexus]= getEventsFromForces(NexusLlowFreq,NexusRlowFreq,100);
         [LHSpyton,RHSpyton]= getEventsFromForces(newData(:,3),newData(:,2),100);
+        
         
         %%
         %localication of HS
@@ -144,7 +158,7 @@ for p=1:length(condition)
         locLindex=find(newData(:,5)==1);
         
         if length(locRindex)<length(locRHSpyton)
-            warning('No all the Heel Strike where detected by Python')
+            warning('No all the HS where detected')
         end
         
         
@@ -154,7 +168,7 @@ for p=1:length(condition)
             FrameDiffR=locRindex(1:end-diffLengthR)-locRHSpyton;
             IsBadR=find(FrameDiffR<=-10);
             if isempty(IsBadR)
-                stop
+                break
                 display('Something is WRONG!')
             else
                 locRindex(IsBadR(1))=[];
@@ -166,7 +180,7 @@ for p=1:length(condition)
             FrameDiff=locLindex(1:end-diffLength)-locLHSpyton;
             IsBad=find(FrameDiff<=-10);
             if isempty(IsBad)
-                stop
+                break
                 display('Something is WRONG!')
             else
                 locLindex(IsBad(1))=[];
@@ -176,26 +190,53 @@ for p=1:length(condition)
         %          display(['RHS nexus  ' num2str(length(locRHSpyton)) '   LHS nexus  ' num2str(length(locLHSpyton))])
         %          display(['RHS pyton  ' num2str(length(locRindex)) '   LHS pyton  ' num2str(length(locLindex))])
         if length(locRHSnexus)~=length(locRindex)
-            warning('No all the RHS where detected by Python')
+            warning(['Gaps affected RHS detection  ' condition{p} ])
+            
+             while length(locRHSnexus)~=length(locRindex)
+                diffLengthR=-length(locRindex)+length(locRHSnexus);
+                FrameDiffR=locRHSnexus(1:end-diffLengthR)-locRindex;
+                IsBadR=find(FrameDiffR<=-10);
+                if isempty(IsBadR)
+                    break
+                    display('Something is WRONG!')
+                else
+                    locfakeR=[locRindex(1:IsBadR-1);locRHSnexus(IsBadR(1));locRindex(IsBadR:end)];
+                    locRindex=locfakeR;
+                end
+            end
         end
         if length(locLHSnexus)~=length(locLindex)
-            warning('No all the LHS where detected by Python')
+            warning(['Gaps affected LHS detection  ' condition{p}])
+           
+            while length(locLHSnexus)~=length(locLindex)
+                diffLengthL=-length(locLindex)+length(locLHSnexus);
+                FrameDiffL=locLHSnexus(1:end-diffLengthL)-locLindex;
+                IsBadL=find(FrameDiffL<=-10);
+                if isempty(IsBadL)
+                    break
+                    display('Something is WRONG!')
+                else
+                    locfakeL=[locLindex(1:IsBadL-1);locLHSnexus(IsBadL(1));locLindex(IsBadL:end)];
+                    locLindex=locfakeL;
+                end
+            end
+        
         end
         %
         %%
         %Good strides
         GoodEvents=expData.data{j}.adaptParams.Data(:,1);
-        GoodRHS=newData(locRindex,6);
-        GoodLHS=newData(locLindex,7);
+        GoodRHS=newData2(locRindex,6);
+        GoodLHS=newData2(locLindex,7);
         GoodRHS=GoodRHS(GoodEvents==1);
         GoodLHS=GoodLHS(GoodEvents==1);
         
         %%
         %find alpha value on time
-        alphaR_time=nan(length(newData),1);
-        alphaL_time=nan(length(newData),1);
-        alphaR_time(locRindex,1)=newData(locRindex,8)*1000;
-        alphaL_time(locLindex,1)=newData(locLindex,9)*1000;
+        alphaR_time=nan(length(newData2),1);
+        alphaL_time=nan(length(newData2),1);
+        alphaR_time(locRindex,1)=newData2(locRindex,8)*1000;
+        alphaL_time(locLindex,1)=newData2(locLindex,9)*1000;
         %alpha values at HS
         alphaRPyton=newData(locRindex,8)*1000;
         alphaLPyton=newData(locLindex,9)*1000;
@@ -203,23 +244,75 @@ for p=1:length(condition)
         alphaLPytonGood=alphaLPyton(GoodEvents==1);
         %
         if typeBiofeedback ==1
-            Rtarget=newData(locRindex,10)*1000;
-            Ltarget=newData(locLindex,11)*1000;
+            Rtarget=newData2(locRindex,10)*1000;
+            Ltarget=newData2(locLindex,11)*1000;
             RtargetGood=Rtarget(GoodEvents==1);
             LtargetGood=Ltarget(GoodEvents==1);
         elseif typeBiofeedback== 0 %static target
-            Rscale=newData(locRindex,10);
-            Lscale=newData(locLindex,11);
+            Rscale=newData2(locRindex,10);
+            Lscale=newData2(locLindex,11);
             RscaleGood=Rscale(GoodEvents==1);
             LscaleGood=Lscale(GoodEvents==1);
-            RtargetGood=(0.5./RscaleGood)*1000;
-            LtargetGood=(0.5./LscaleGood)*1000;
+            Rtarget2Good=(0.25./RscaleGood)*1000;
+            Ltarget2Good=(0.25./LscaleGood)*1000;
+            Rtarget=newData(locRindex,16)*1000;
+            Ltarget=newData(locLindex,17)*1000;
+            RtargetGood=Rtarget(GoodEvents==1);
+            LtargetGood=Ltarget(GoodEvents==1);
         end
-        
-        
+       %% 
+%Comprobando si los pasos fueron clasificados de la manera correcta
+ if typeBiofeedback==1 
+     for i=1:length(GoodRHS)
+         if abs(alphaRPytonGood(i)-RtargetGood(i))<=25
+             GoodR(i,1)=1;
+         elseif abs(alphaRPytonGood(i)-RtargetGood(i))>25
+             GoodR(i,1)=0;
+         end
+         if GoodR(i)~=GoodRHS(i)
+             display(['BAD LABEL RIGHT LEG ' num2str(i) ' STEP'])
+         end
+     end
+     
+     for i=1:length(GoodLHS)
+         if abs(alphaLPytonGood(i)-LtargetGood(i))<=25
+             GoodL(i,1)=1;
+         elseif abs(alphaLPytonGood(i)-LtargetGood(i))>25
+             GoodL(i,1)=0;
+         end
+          if GoodL(i)~=GoodLHS(i)
+             display(['BAD LABEL LEFT LEG ' num2str(i) ' STEP'])
+         end
+     end
+ end
+         
+ if typeBiofeedback==0
+     for i=1:length(GoodRHS)
+         if abs(alphaRPytonGood(i)-RtargetGood(i))<=25
+             GoodR(i,1)=1;
+          elseif abs(alphaRPytonGood(i)-RtargetGood(i))>25
+             GoodR(i,1)=0;
+         end
+         if GoodR(i)~=GoodRHS(i)
+             display(['BAD LABEL RIGHT LEG ' num2str(i) ' STEP'])
+         end
+     end
+     
+      for i=1:length(GoodLHS)
+          if abs(alphaLPytonGood(i)-LtargetGood(i))<=25
+             GoodL(i,1)=1;
+          elseif abs(alphaLPytonGood(i)-LtargetGood(i))>25
+             GoodL(i,1)=0;
+         end
+         if GoodL(i)~=GoodLHS(i)
+             display(['BAD LABEL LEFT LEG ' num2str(i) ' STEP'])
+         end
+     end
+ end
+
+    
     end
-    
-    
+  %%  
     
     numberSteps=adaptData.getParamInCond('Good',condition{p});
     
@@ -245,8 +338,15 @@ for p=1:length(condition)
     
 end
 %%
-this=paramData([adaptData.data.Data,StepsR,StepsL,Steps],[adaptData.data.labels 'TargetHitR' 'TargetHitL' 'TargetHit'],adaptData.data.indsInTrial,adaptData.data.trialTypes);
-adaptData=adaptationData(rawExpData.metaData,rawExpData.subData,this);
-saveloc=[];
-save([saveloc subject 'params.mat'],'adaptData');
-end
+% pData=adaptData.data;
+% labels={'TargetHitR', 'TargetHitL', 'TargetHit'};
+% [aux,idx]=pData.isaLabel(labels);
+% if all(aux)
+%     adaptData.data.Data(:,idx)=[StepsR,StepsL,Steps];
+% else
+% this=paramData([adaptData.data.Data,StepsR,StepsL,Steps],[adaptData.data.labels 'TargetHitR' 'TargetHitL' 'TargetHit'],adaptData.data.indsInTrial,adaptData.data.trialTypes);
+% adaptData=adaptationData(rawExpData.metaData,rawExpData.subData,this);
+% end
+% saveloc=[];
+% save([saveloc subject 'params.mat'],'adaptData');
+% end
