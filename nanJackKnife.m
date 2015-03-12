@@ -169,10 +169,10 @@ Pa=[];
     for l=1:length(x)
         
         if w(l)==0;
-            Li = plot(x(l),y(l),'o','MarkerSize',5,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',[0 0 0]);
+            Li = plot(x(l),y(l),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',[0 0 0]);
             %Li = plot(x(l),y(l),'o','MarkerSize',5,'LineWidth',1,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',[0 0 0]);
         else
-            Li = plot(x(l),y(l),'o','MarkerSize',5,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',LineColor);
+            Li = plot(x(l),y(l),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',LineColor);
             % Li = plot(x(l),y(l),'o','MarkerSize',5,'LineWidth',1,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',LineColor);
         end
     end
