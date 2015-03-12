@@ -179,12 +179,12 @@ function [figHandle,allData]=plotGroupedSubjectsBars(adaptDataList,label,removeB
                     group2=group2(ismember(group2,['A':'Z' 'a':'z']));
                     abrevGroup=[group2];
 %                     legStr=[legStr, {['Early (first ' num2str(N2) '), Group ' abrevGroup],['Late (last ' num2str(N3) ' (-' num2str(Ne) '), Group ' abrevGroup]}];
-                if group==3
-                legStr=[legStr, {['Early (first ' num2str(N2) '), Group ' abrevGroup 'old'],['Late (last ' num2str(N3) ' (-' num2str(Ne) '), Group ' abrevGroup 'old']}];
-                else
+%                 if group==3
+%                 legStr=[legStr, {['Early (first ' num2str(N2) '), Group ' abrevGroup 'old'],['Late (last ' num2str(N3) ' (-' num2str(Ne) '), Group ' abrevGroup 'old']}];
+%                 else
                  legStr=[legStr, {['Early (first ' num2str(N2) '), Group ' abrevGroup],['Late (last ' num2str(N3) ' (-' num2str(Ne) '), Group ' abrevGroup]}];
       
-                end
+%                 end
                 end
                 legend(h,legStr)
             end
