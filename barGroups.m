@@ -7,7 +7,7 @@ GreyOrder=[0 0 0 ;1 1 1;0.5 0.5 0.5;0.2 0.2 0.2;0.9 0.9 0.9;0.1 0.1 0.1;0.8 0.8 
 ColorOrder=[p_red; p_orange; p_fade_green; p_fade_blue; p_plum; p_green; p_blue; p_fade_red; p_lime; p_yellow; p_gray; p_black;p_red];
 
 catchNumPts = 5; % catch
-steadyNumPts = 40; %end of adaptation
+steadyNumPts = 20; %end of adaptation
 transientNumPts = 5; % OG and Washout
 
 if nargin<3 || isempty(groups)
@@ -63,11 +63,11 @@ for g=1:ngroups
         SLf=adaptData.data.getParameter('stepLengthFast');
         SLs=adaptData.data.getParameter('stepLengthSlow');
         Dist=SLf+SLs;
-        contLabels={'spatialContribution','stepTimeContribution','velocityContribution','netContribution'};
+        contLabels={'spatialContributionNorm2','stepTimeContributionNorm2','velocityContributionNorm2','netContributionNorm2'};
         [~,dataCols]=isaParameter(adaptData.data,contLabels);
         for c=1:length(contLabels)
             contData=adaptData.data.getParameter(contLabels(c));
-            contData=contData./Dist;
+            contData=contData;%./Dist;
             adaptData.data.Data(:,dataCols(c))=contData;
         end
         
@@ -97,8 +97,8 @@ for g=1:ngroups
             %calculate catch as mean value during strides which caused a
             %maximum deviation from zero in step length asymmetry during 
             %'catchNumPts' consecutive steps
-            stepAsymData=adaptData.getParamInCond('stepLengthAsym','catch');
-            tmcatchData=adaptData.getParamInCond(params,'catch');
+            stepAsymData=adaptData.getParamInCond('stepLengthAsym','Catch');
+            tmcatchData=adaptData.getParamInCond(params,'Catch');
             if isempty(tmcatchData)
                 newtmcatchData=NaN(1,length(params));
                 newStepAsymData=NaN;
@@ -135,7 +135,7 @@ for g=1:ngroups
             
         else
             %calculate catch
-            tmcatchData=adaptData.getParamInCond(params,'catch');
+            tmcatchData=adaptData.getParamInCond(params,'Catch');
             if isempty(tmcatchData)
                 newtmcatchData=NaN(1,length(params));
             elseif size(tmcatchData,1)<3
@@ -151,13 +151,13 @@ for g=1:ngroups
             
             %calculate TM after-effects
             tmafterData=adaptData.getParamInCond(params,'TM post');
-            tmafter=[tmafter; nanmean(transferData(1:transientNumPts,:))];            
+            tmafter=[tmafter; nanmean(tmafterData(1:transientNumPts,:))];            
         end
         
 
         
         %calculate TM steady state #1
-        tmsteady1Data=adaptData.getParamInCond(params,'Gradual Adaptation');
+        tmsteady1Data=adaptData.getParamInCond(params,'Gradual adaptation');
         tmsteady1=[tmsteady1;nanmean(tmsteady1Data((end-5)-steadyNumPts+1:(end-5),:))];             
         
         %calculate TM steady state #2
