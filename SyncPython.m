@@ -1,7 +1,7 @@
-% function SyncPython(subject,typeBiofeedback)
+function results=SyncPython(subject,typeBiofeedback)
 %typeBiofeedback dymamics=1, Statics=0.
-subject='PST07';
-typeBiofeedback=0;
+% subject='PST08';
+% typeBiofeedback=0;
 load([subject 'params.mat'])
 load([subject '.mat'])
 load([subject 'RAW.mat'])
@@ -16,8 +16,24 @@ w=0;
 StepsR=[];
 StepsL=[];
 Steps=[];
-% for p=1:length(condition)
-    for p=1:2
+
+
+
+
+   
+results.locRindex=[];
+results.locLindex=[];
+results.alphaRPytonGood=[];
+results.alphaLPytonGood=[];
+results.RtargetGood=[];
+results.LtargetGood=[];
+results.RscaleGood=[];
+results.LscaleGood=[];
+results.GoodRHS=[];
+results.GoodLHS=[];
+ 
+for p=1:length(condition)
+%     for p=1:1
     
     j=[];
     GRRz=[];
@@ -63,8 +79,8 @@ Steps=[];
     Ltarget2Good=[];
     
     if strcmp(condition{p},'Gradual adaptation') || strcmp(condition{p},'Re-adaptation')
-%         w=w+1;
-w=1;
+        w=w+1;
+% w=1;
         load(['Pyton' num2str(w) '.mat'])
         z=expData.metaData.getConditionIdxsFromName(condition{p});
         j=adaptData.metaData.trialsInCondition{z};
@@ -122,23 +138,23 @@ w=1;
         hola=labTimeSeries(newData2,0,0.01,{'FrameNumber','Rfz','Lfz','RHS','LHS','RGORB','LGORB','Ralpha','Lalpha','Rscale','Lscale','RHIPY','LHIPY','RANKY','LANKY','targetR','targetL'});
 
 %          figure()
-%         plot(NexusRlowFreq,'b')
-%         hold on
-%         plot(newData(:,2), 'r')
-%         plot(newData2(:,2), 'g')
-%         legend('Nexus','Interpolate Pyton','Pyton')
-%         title('Sync of R Force plate data')
+        plot(NexusRlowFreq,'b')
+        hold on
+        plot(newData(:,2), 'r')
+        plot(newData2(:,2), 'g')
+        legend('Nexus','Interpolate Pyton','Pyton')
+        title('Sync of R Force plate data')
 %                 
-%         figure()
-%         plot(NexusLlowFreq,'b')
-%         hold on
-%         plot(newData(:,3), 'r')
-%         plot(newData2(:,3), 'g')
-%         legend('Nexus','Interpolate Pyton','Pyton')
-%         title('Sync of L Force plate data')
+        figure()
+        plot(NexusLlowFreq,'b')
+        hold on
+        plot(newData(:,3), 'r')
+        plot(newData2(:,3), 'g')
+        legend('Nexus','Interpolate Pyton','Pyton')
+        title('Sync of L Force plate data')
         %
-        NexusLlowFreq=NexusLlowFreq(1:length(newData));
-        NexusRlowFreq=NexusRlowFreq(1:length(newData));
+%         NexusLlowFreq=NexusLlowFreq(1:length(newData));
+%         NexusRlowFreq=NexusRlowFreq(1:length(newData));
         
         %%
         %Finding HS from Nexus at 100HZ and Interpolated Pyton data, interpolate
@@ -222,6 +238,7 @@ w=1;
             end
         
         end
+        
         %
         %%
         %Good strides
@@ -230,7 +247,10 @@ w=1;
         GoodLHS=newData2(locLindex,7);
         GoodRHS=GoodRHS(GoodEvents==1);
         GoodLHS=GoodLHS(GoodEvents==1);
-        
+        results.locLindex=[results.locLindex;locLindex(GoodEvents==1)];
+        results.locRindex=[results.locRindex;locRindex(GoodEvents==1)];
+        results.GoodRHS=[results.GoodRHS;GoodRHS];
+        results.GoodLHS=[results.GoodLHS;GoodLHS];
         %%
         %find alpha value on time
         alphaR_time=nan(length(newData2),1);
@@ -242,6 +262,8 @@ w=1;
         alphaLPyton=newData(locLindex,9)*1000;
         alphaRPytonGood=alphaRPyton(GoodEvents==1);
         alphaLPytonGood=alphaLPyton(GoodEvents==1);
+        results.alphaRPytonGood=[results.alphaRPytonGood;alphaRPytonGood];
+        results.alphaLPytonGood=[results.alphaLPytonGood;alphaLPytonGood];
         %
         if typeBiofeedback ==1
             Rtarget=newData2(locRindex,10)*1000;
@@ -338,15 +360,15 @@ w=1;
     
 end
 %%
-% pData=adaptData.data;
-% labels={'TargetHitR', 'TargetHitL', 'TargetHit'};
-% [aux,idx]=pData.isaLabel(labels);
-% if all(aux)
-%     adaptData.data.Data(:,idx)=[StepsR,StepsL,Steps];
-% else
-% this=paramData([adaptData.data.Data,StepsR,StepsL,Steps],[adaptData.data.labels 'TargetHitR' 'TargetHitL' 'TargetHit'],adaptData.data.indsInTrial,adaptData.data.trialTypes);
-% adaptData=adaptationData(rawExpData.metaData,rawExpData.subData,this);
-% end
-% saveloc=[];
-% save([saveloc subject 'params.mat'],'adaptData');
-% end
+pData=adaptData.data;
+labels={'TargetHitR', 'TargetHitL', 'TargetHit'};
+[aux,idx]=pData.isaLabel(labels);
+if all(aux)
+    adaptData.data.Data(:,idx)=[StepsR,StepsL,Steps];
+else
+this=paramData([adaptData.data.Data,StepsR,StepsL,Steps],[adaptData.data.labels 'TargetHitR' 'TargetHitL' 'TargetHit'],adaptData.data.indsInTrial,adaptData.data.trialTypes);
+adaptData=adaptationData(rawExpData.metaData,rawExpData.subData,this);
+end
+saveloc=[];
+save([saveloc subject 'params.mat'],'adaptData');
+end
