@@ -74,7 +74,7 @@ for g=1:ngroups
         %remove baseline bias
         adaptData=adaptData.removeBias;
         
-        if nargin>3 && findMaxPerturb==1
+        if nargin>3 && findMaxPerturb==1 %|| nargin>3 && ~isempty(findMaxPerturb)
             
 %             %calculate TM and OG base in same manner as calculating OG post and TM
 %             %post to ensure that they are different.
