@@ -115,7 +115,7 @@ ystdLL=-25*ones([length(GoodLHS),1])+Ltarget;
 % end 
 figure()
 hold on 
-% plot(1:length(GoodRHS),ystdRU,'--r',1:length(GoodRHS),ystdRL,'--r',1:length(GoodRHS),Rtarget,'r')
+plot(1:length(GoodRHS),ystdRU,'--r',1:length(GoodRHS),ystdRL,'--r',1:length(GoodRHS),Rtarget,'r')
 % errorbar(Rtarget2,ystdR,'rx');
 % errorbar(Rtarget2,ystdR2,'rx');
 for i=1:length(GoodRHS)
@@ -141,7 +141,7 @@ hold on
 
 % errorbar(Ltarget2,ystdL,'rx');
 % errorbar(Ltarget2,ystdL2,'rx');
-% plot(1:length(GoodLHS),ystdLU,'--r',1:length(GoodLHS),ystdLL,'--r',1:length(GoodLHS),Ltarget,'r')
+plot(1:length(GoodLHS),ystdLU,'--r',1:length(GoodLHS),ystdLL,'--r',1:length(GoodLHS),Ltarget,'r')
 for i=1:length(GoodLHS)
     if GoodLHS(i)==1
 % if abs((Lscale(i)*alphaLPyton(i))-500)<25
