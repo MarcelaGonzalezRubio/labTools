@@ -75,34 +75,37 @@ else
 end
 %%
 %Good strides
-GoodRHS=newData2(locRindex,6);
-GoodLHS=newData2(locLindex,7); 
+
+
+GoodRHS=newData2(locRindex,8);
+GoodLHS=newData2(locLindex,9); 
+
 
 %%
 %find alpha value on time
 alphaR_time=nan(length(newData2),1);
 alphaL_time=nan(length(newData2),1);
-alphaR_time(locRindex,1)=newData2(locRindex,8)*1000;
-alphaL_time(locLindex,1)=newData2(locLindex,9)*1000;
+alphaR_time(locRindex,1)=newData2(locRindex,10)*1000;
+alphaL_time(locLindex,1)=newData2(locLindex,11)*1000;
 %alpha values at HS 
-alphaRPyton=newData2(locRindex,8)*1000;
-alphaLPyton=newData2(locLindex,9)*1000;
+alphaRPyton=newData2(locRindex,10)*1000;
+alphaLPyton=newData2(locLindex,11)*1000;
 
 % 
 if dynamic ==1 
 Rtarget=newData2(locRindex,10)*1000;
 Ltarget=newData2(locLindex,11)*1000;
 elseif dynamic== 0 %static target
-Rscale=newData2(locRindex,10);
-Lscale=newData2(locLindex,11);
+Rscale=newData2(locRindex,12);
+Lscale=newData2(locLindex,13);
 Rtarget2=(0.25./Rscale)*1000;
 Ltarget2=(0.25./Lscale)*1000;    
-Rtarget=newData2(locRindex,16)*1000;
-Ltarget=newData2(locLindex,17)*1000;
+Rtarget=newData2(locRindex,18)*1000;
+Ltarget=newData2(locLindex,19)*1000;
 end
 % LHip=newData2(locRindex,13)*1000;
 % LAnk=newData2(locLindex,15)*1000;
-hola=labTimeSeries(newData2,0,0.01,{'FrameNumber','Rfz','Lfz','RHS','LHS','RGORB','LGORB','Ralpha','Lalpha','Rscale','Lscale','RHIPY','LHIPY','RANKY','LANKY','targetR','targetL'});
+% hola=labTimeSeries(newData2,0,0.01,{'FrameNumber','Rfz','Lfz','RHS','LHS','RGORB','LGORB','Ralpha','Lalpha','Rscale','Lscale','RHIPY','LHIPY','RANKY','LANKY','targetR','targetL'});
 %%
 %plot of the alpha values. Tolerance indicade 
 ystdRU=25*ones([length(GoodRHS),1])+Rtarget;
@@ -119,18 +122,18 @@ plot(1:length(GoodRHS),ystdRU,'--r',1:length(GoodRHS),ystdRL,'--r',1:length(Good
 % errorbar(Rtarget2,ystdR,'rx');
 % errorbar(Rtarget2,ystdR2,'rx');
 for i=1:length(GoodRHS)
-%         if abs((Rscale(i)*alphaRPyton(i))-500)<25
-       if GoodRHS(i)==1
-       %if abs(alphaRPyton(i)-Rtarget(i))<25
-         plot(i,alphaRPyton(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor','g');
-         GoodR(i,1)=1;
-%         elseif abs((Rscale(i)*alphaRPyton(i))-500)>=25
-       elseif GoodRHS(i)==0
-%        elseif abs(alphaRPyton(i)-Rtarget(i))>=25
+% for i=1:length(alphaRnexus)
+    %         if abs((Rscale(i)*alphaRPyton(i))-500)<25
+    if GoodRHS(i)==1
+        %if abs(alphaRPyton(i)-Rtarget(i))<25
+        plot(i,alphaRPyton(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor','g');
+        GoodR(i,1)=1;
+        %         elseif abs((Rscale(i)*alphaRPyton(i))-500)>=25
+    elseif GoodRHS(i)==0
+        %        elseif abs(alphaRPyton(i)-Rtarget(i))>=25
         plot(i,alphaRPyton(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',[0 0 0]);
-         GoodR(i,1)=0;
-        end
-    
+        GoodR(i,1)=0;
+    end
 end
  title(['Alpha R leg  \alpha_(_n_)-\alpha^*<25' ])
 % title(['Alpha R leg \alpha_(_n_)-\alpha^*<25' ])
@@ -143,18 +146,19 @@ hold on
 % errorbar(Ltarget2,ystdL2,'rx');
 plot(1:length(GoodLHS),ystdLU,'--r',1:length(GoodLHS),ystdLL,'--r',1:length(GoodLHS),Ltarget,'r')
 for i=1:length(GoodLHS)
-    if GoodLHS(i)==1
-% if abs((Lscale(i)*alphaLPyton(i))-500)<25
-       %if abs(alphaLPyton(i)-Ltarget(i))<25
-       plot(i,alphaLPyton(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor','g');
-%        GoodL(i,1)=1;
+% for i=1:length(alphaRnexus) 
+if GoodLHS(i)==1
+        % if abs((Lscale(i)*alphaLPyton(i))-500)<25
+        %if abs(alphaLPyton(i)-Ltarget(i))<25
+        plot(i,alphaLPyton(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor','g');
+        %        GoodL(i,1)=1;
     elseif GoodLHS(i)==0
-%      elseif abs(alphaLPyton(i)-Ltarget(i))>=25
-%  elseif abs((Lscale(i)*alphaLPyton(i))-500)>=25
+        %      elseif abs(alphaLPyton(i)-Ltarget(i))>=25
+        %  elseif abs((Lscale(i)*alphaLPyton(i))-500)>=25
         plot(i,alphaLPyton(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',[0 0 0]);
-         GoodL(i,1)=0;
+        GoodL(i,1)=0;
     end
-  
+   
 end
 title(['Alpha L leg \alpha_(_n_)-\alpha^*<25' ])
 axis tight
