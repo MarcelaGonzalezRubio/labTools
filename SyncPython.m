@@ -33,7 +33,7 @@ results.GoodRHS=[];
 results.GoodLHS=[];
  
 for p=1:length(condition)
-%     for p=1:1
+%     for p=1:2
     
     j=[];
     GRRz=[];
@@ -77,6 +77,8 @@ for p=1:length(condition)
     GoodL=[];
     Rtarget2Good=[];
     Ltarget2Good=[];
+    alphaRnexus=[];
+    alphaLnexus=[];
     
     if strcmp(condition{p},'Gradual adaptation') || strcmp(condition{p},'Re-adaptation')
         w=w+1;
@@ -90,8 +92,8 @@ for p=1:length(condition)
         GRLz=expData.data{j}.GRFData.Data(:,3);
         
         %Converting force plate data from 1000Hz to 100Hz
-        NexusRlowFreq=resample(GRRz,1,10);
-        NexusLlowFreq=resample(GRLz,1,10);
+        NexusRlowFreq=resample(GRRz,1,8);
+        NexusLlowFreq=resample(GRLz,1,8);
         
         %Creating NaN matrix with the lenght of the data
         newData=nan((((outmat(end,1)-outmat(1,1)))+1),size(header,2));
@@ -109,9 +111,9 @@ for p=1:length(condition)
         
         outmat=outmat(datarows,:);
         %Calculating the gap's length for pyton data
-        % gap=diff(outmat(:,1));
-        % figure()
-        % plot(gap,'b')
+%         gap=diff(outmat(:,1));
+%         figure()
+%         plot(gap,'b')
         
         %Creating a linear interpolate matrix from Pyton data
         newData=interp1(outmat(:,1),outmat(:,1:end),[outmat(1,1):outmat(end,1)]);
@@ -135,14 +137,28 @@ for p=1:length(condition)
             NexusLlowFreq =NexusLlowFreq(abs(timeDiff)+1:end,1:end);
         end
         
-        hola=labTimeSeries(newData2,0,0.01,{'FrameNumber','Rfz','Lfz','RHS','LHS','RGORB','LGORB','Ralpha','Lalpha','Rscale','Lscale','RHIPY','LHIPY','RANKY','LANKY','targetR','targetL'});
+%         hola=labTimeSeries(newData2,0,0.01,{'FrameNumber','Rfz','Lfz','RHS','LHS','RGORB','LGORB','Ralpha','Lalpha','Rscale','Lscale','RHIPY','LHIPY','RANKY','LANKY','targetR','targetL'});
 
-%          figure()
+ 
+        
+%         NexusLlowFreq=NexusLlowFreq(1:length(newData));
+%         NexusRlowFreq=NexusRlowFreq(1:length(newData));
+        
+        %%
+        %Finding HS from Nexus at 100HZ and Interpolated Pyton data, interpolate
+        %data is used to make sure that we dont take in consideration extras HS.
+        [LHSnexus,RHSnexus]= getEventsFromForces(NexusLlowFreq,NexusRlowFreq,120);
+        [LHSpyton,RHSpyton]= getEventsFromForces(newData(:,3),newData(:,2),120);
+        
+                figure()
         plot(NexusRlowFreq,'b')
         hold on
         plot(newData(:,2), 'r')
         plot(newData2(:,2), 'g')
-        legend('Nexus','Interpolate Pyton','Pyton')
+        plot(RHSnexus*100,'k')
+        plot(RHSpyton*100,'m')
+        plot(newData2(:,4),'y')
+        legend('Nexus','Interpolate Pyton','Pyton','RHSnexus','RHSpyton','RHS python matrix')
         title('Sync of R Force plate data')
 %                 
         figure()
@@ -150,19 +166,11 @@ for p=1:length(condition)
         hold on
         plot(newData(:,3), 'r')
         plot(newData2(:,3), 'g')
-        legend('Nexus','Interpolate Pyton','Pyton')
+        plot(LHSnexus*100,'k')
+        plot(LHSpyton*100,'m')
+        plot(newData2(:,5),'y')
+        legend('Nexus','Interpolate Pyton','Pyton','LHSnexus','LHSpyton','LHS python matrix')
         title('Sync of L Force plate data')
-        %
-%         NexusLlowFreq=NexusLlowFreq(1:length(newData));
-%         NexusRlowFreq=NexusRlowFreq(1:length(newData));
-        
-        %%
-        %Finding HS from Nexus at 100HZ and Interpolated Pyton data, interpolate
-        %data is used to make sure that we dont take in consideration extras HS.
-        [LHSnexus,RHSnexus]= getEventsFromForces(NexusLlowFreq,NexusRlowFreq,100);
-        [LHSpyton,RHSpyton]= getEventsFromForces(newData(:,3),newData(:,2),100);
-        
-        
         %%
         %localication of HS
         locRHSpyton=find(RHSpyton==1);
@@ -203,12 +211,43 @@ for p=1:length(condition)
             end
         end
         
+        if length(locRHSnexus)<length(locRindex)
+          FrameDiffR=[];
+          IsBadR=[];
+            while length(locRHSnexus)~=length(locRindex)
+            diffLengthR=length(locRindex)-length(locRHSnexus);
+            FrameDiffR=locRindex(1:end-diffLengthR)-locRHSnexus;
+            IsBadR=find(FrameDiffR<=-10);
+            if isempty(IsBadR)
+                break
+                display('Something is WRONG!')
+            else
+                locRindex(IsBadR(1))=[];
+            end
+        end
+        end
+        
+        if length(locLHSnexus)<length(locLindex)
+            FrameDiff=[]
+            IsBad=[];
+        while length(locLHSpyton)~=length(locLHSnexus)
+            diffLength=length(locLindex)-length(locLHSnexus);
+            FrameDiff=locLindex(1:end-diffLength)-locLHSnexus;
+            IsBad=find(FrameDiff<=-10);
+            if isempty(IsBad)
+                break
+                display('Something is WRONG!')
+            else
+                locLindex(IsBad(1))=[];
+            end
+        end
+        end
         %          display(['RHS nexus  ' num2str(length(locRHSpyton)) '   LHS nexus  ' num2str(length(locLHSpyton))])
         %          display(['RHS pyton  ' num2str(length(locRindex)) '   LHS pyton  ' num2str(length(locLindex))])
-        if length(locRHSnexus)~=length(locRindex)
+        if length(locRHSnexus)>length(locRindex)
             warning(['Gaps affected RHS detection  ' condition{p} ])
             
-             while length(locRHSnexus)~=length(locRindex)
+             while length(locRHSnexus)>length(locRindex)
                 diffLengthR=-length(locRindex)+length(locRHSnexus);
                 FrameDiffR=locRHSnexus(1:end-diffLengthR)-locRindex;
                 IsBadR=find(FrameDiffR<=-10);
@@ -221,10 +260,10 @@ for p=1:length(condition)
                 end
             end
         end
-        if length(locLHSnexus)~=length(locLindex)
+        if length(locLHSnexus)>length(locLindex)
             warning(['Gaps affected LHS detection  ' condition{p}])
            
-            while length(locLHSnexus)~=length(locLindex)
+            while length(locLHSnexus)>length(locLindex)
                 diffLengthL=-length(locLindex)+length(locLHSnexus);
                 FrameDiffL=locLHSnexus(1:end-diffLengthL)-locLindex;
                 IsBadL=find(FrameDiffL<=-10);
@@ -243,42 +282,44 @@ for p=1:length(condition)
         %%
         %Good strides
         GoodEvents=expData.data{j}.adaptParams.Data(:,1);
-        GoodRHS=newData2(locRindex,6);
-        GoodLHS=newData2(locLindex,7);
+        GoodRHS=newData2(locRindex,8);
+        GoodLHS=newData2(locLindex,9);
         GoodRHS=GoodRHS(GoodEvents==1);
         GoodLHS=GoodLHS(GoodEvents==1);
         results.locLindex=[results.locLindex;locLindex(GoodEvents==1)];
         results.locRindex=[results.locRindex;locRindex(GoodEvents==1)];
         results.GoodRHS=[results.GoodRHS;GoodRHS];
         results.GoodLHS=[results.GoodLHS;GoodLHS];
+        
+      
         %%
         %find alpha value on time
         alphaR_time=nan(length(newData2),1);
         alphaL_time=nan(length(newData2),1);
-        alphaR_time(locRindex,1)=newData2(locRindex,8)*1000;
-        alphaL_time(locLindex,1)=newData2(locLindex,9)*1000;
+        alphaR_time(locRindex,1)=newData2(locRindex,10)*1000;
+        alphaL_time(locLindex,1)=newData2(locLindex,11)*1000;
         %alpha values at HS
-        alphaRPyton=newData(locRindex,8)*1000;
-        alphaLPyton=newData(locLindex,9)*1000;
+        alphaRPyton=newData(locRindex,10)*1000;
+        alphaLPyton=newData(locLindex,11)*1000;
         alphaRPytonGood=alphaRPyton(GoodEvents==1);
         alphaLPytonGood=alphaLPyton(GoodEvents==1);
         results.alphaRPytonGood=[results.alphaRPytonGood;alphaRPytonGood];
         results.alphaLPytonGood=[results.alphaLPytonGood;alphaLPytonGood];
         %
         if typeBiofeedback ==1
-            Rtarget=newData2(locRindex,10)*1000;
-            Ltarget=newData2(locLindex,11)*1000;
+            Rtarget=newData2(locRindex,12)*1000;
+            Ltarget=newData2(locLindex,13)*1000;
             RtargetGood=Rtarget(GoodEvents==1);
             LtargetGood=Ltarget(GoodEvents==1);
         elseif typeBiofeedback== 0 %static target
-            Rscale=newData2(locRindex,10);
-            Lscale=newData2(locLindex,11);
+            Rscale=newData2(locRindex,12);
+            Lscale=newData2(locLindex,13);
             RscaleGood=Rscale(GoodEvents==1);
             LscaleGood=Lscale(GoodEvents==1);
             Rtarget2Good=(0.25./RscaleGood)*1000;
             Ltarget2Good=(0.25./LscaleGood)*1000;
-            Rtarget=newData(locRindex,16)*1000;
-            Ltarget=newData(locLindex,17)*1000;
+            Rtarget=newData(locRindex,18)*1000;
+            Ltarget=newData(locLindex,19)*1000;
             RtargetGood=Rtarget(GoodEvents==1);
             LtargetGood=Ltarget(GoodEvents==1);
         end
@@ -288,8 +329,10 @@ for p=1:length(condition)
      for i=1:length(GoodRHS)
          if abs(alphaRPytonGood(i)-RtargetGood(i))<=25
              GoodR(i,1)=1;
-         elseif abs(alphaRPytonGood(i)-RtargetGood(i))>25
+         elseif abs(alphaRPytonGood(i)-RtargetGood(i))>25  
              GoodR(i,1)=0;
+         elseif isnan(GoodRHS(i)) 
+             GoodR(i,1)=NaN;
          end
          if GoodR(i)~=GoodRHS(i)
              display(['BAD LABEL RIGHT LEG ' num2str(i) ' STEP'])
@@ -299,8 +342,10 @@ for p=1:length(condition)
      for i=1:length(GoodLHS)
          if abs(alphaLPytonGood(i)-LtargetGood(i))<=25
              GoodL(i,1)=1;
-         elseif abs(alphaLPytonGood(i)-LtargetGood(i))>25
+         elseif abs(alphaLPytonGood(i)-LtargetGood(i))>25 
              GoodL(i,1)=0;
+         elseif isnan(GoodLHS(i)) 
+             GoodL(i,1)=NaN;
          end
           if GoodL(i)~=GoodLHS(i)
              display(['BAD LABEL LEFT LEG ' num2str(i) ' STEP'])
@@ -314,6 +359,8 @@ for p=1:length(condition)
              GoodR(i,1)=1;
           elseif abs(alphaRPytonGood(i)-RtargetGood(i))>25
              GoodR(i,1)=0;
+           elseif isnan(GoodRHS(i)) 
+             GoodR(i,1)=NaN;
          end
          if GoodR(i)~=GoodRHS(i)
              display(['BAD LABEL RIGHT LEG ' num2str(i) ' STEP'])
@@ -325,13 +372,87 @@ for p=1:length(condition)
              GoodL(i,1)=1;
           elseif abs(alphaLPytonGood(i)-LtargetGood(i))>25
              GoodL(i,1)=0;
+          elseif isnan(GoodLHS(i)) 
+             GoodL(i,1)=NaN;
          end
          if GoodL(i)~=GoodLHS(i)
              display(['BAD LABEL LEFT LEG ' num2str(i) ' STEP'])
          end
      end
  end
+ %%
+alphaRnexus=adaptData.getParamInCond({'alphaFast'},condition{p});
+alphaLnexus=adaptData.getParamInCond({'alphaTemp'},condition{p});
+%plot of the alpha values. Tolerance indicade 
+ystdRU=25*ones([length(GoodRHS),1])+RtargetGood;
+ystdRL=-25*ones([length(GoodRHS),1])+RtargetGood;
 
+ystdLU=25*ones([length(GoodLHS),1])+LtargetGood;
+ystdLL=-25*ones([length(GoodLHS),1])+LtargetGood;
+
+figure()
+hold on 
+toleranceR=plot(1:length(GoodRHS),ystdRU,'--r',1:length(GoodRHS),ystdRL,'--r',1:length(GoodRHS),RtargetGood,'r');
+r=0;
+ for i=1:length(GoodRHS)
+
+     if GoodRHS(i)==1
+         gPr=plot(i,alphaRPytonGood(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor','g');
+         GoodR(i,1)=1;
+         
+     elseif GoodRHS(i)==0
+         
+         blackPr=plot(i,alphaRPytonGood(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',[0 0 0]);
+         GoodR(i,1)=0;
+     end
+     if abs(alphaRnexus(i)-RtargetGood(i))<25
+         RNr=plot(i,alphaRnexus(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor','r');
+     elseif abs(alphaRnexus(i)-RtargetGood(i))>=25
+         blackNr=plot(i,alphaRnexus(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor','b');
+     r=r+1;
+     end
+end
+ title(['Alpha Fast leg' ])
+ gPr=gPr(1,1);
+ toleranceR=toleranceR(1,1);
+ blackPr=blackPr(1,1);
+ RNr=RNr(1,1);
+ blackNr=blackNr(1,1);
+ legend([gPr,blackPr,RNr,blackNr,toleranceR],'Good Steps Python','Bad Steps Python','Good Steps Nexus','Bad Steps Nexus','Tolerance')
+ axis tight
+
+figure()
+hold on 
+
+
+toleranceL=plot(1:length(GoodLHS),ystdLU,'--r',1:length(GoodLHS),ystdLL,'--r',1:length(GoodLHS),LtargetGood,'r');
+l=0;
+for i=1:length(GoodLHS) 
+    if GoodLHS(i)==1
+        
+        gPL=plot(i,alphaLPytonGood(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor','g');
+        
+    elseif GoodLHS(i)==0
+        
+        blackPL=plot(i,alphaLPytonGood(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',[0 0 0]);
+        GoodL(i,1)=0;
+    end
+    if abs(alphaLnexus(i)-LtargetGood(i))<25
+       RNL= plot(i,alphaLnexus(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor','r');
+    elseif abs(alphaLnexus(i)-LtargetGood(i))>=25
+       blackNL= plot(i,alphaLnexus(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor','b');
+    l=l+1;
+    end
+  
+end
+gPL=gPL(1,1);
+blackPL=blackPL(1,1);
+RNL=RNL(1,1);
+blackNL=blackNL(1,1);
+toleranceL=toleranceL(1,1);
+title(['Alpha Slow leg'])
+legend([gPL,blackPL,RNL,blackNL,toleranceL],'Good Steps Python','Bad Steps Python','Good Steps Nexus','Bad Steps Nexus','Tolerance')
+axis tight
     
     end
   %%  
@@ -371,4 +492,6 @@ adaptData=adaptationData(rawExpData.metaData,rawExpData.subData,this);
 end
 saveloc=[];
 save([saveloc subject 'params.mat'],'adaptData');
+
+
 end
