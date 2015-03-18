@@ -6,9 +6,9 @@ poster_colors;
 GreyOrder=[0 0 0 ;1 1 1;0.5 0.5 0.5;0.2 0.2 0.2;0.9 0.9 0.9;0.1 0.1 0.1;0.8 0.8 0.8;0.3 0.3 0.3;0.7 0.7 0.7];
 ColorOrder=[p_red; p_orange; p_fade_green; p_fade_blue; p_plum; p_green; p_blue; p_fade_red; p_lime; p_yellow; p_gray; p_black;p_red];
 
-catchNumPts = 5; % catch
+catchNumPts = 3; % catch
 steadyNumPts = 20; %end of adaptation
-transientNumPts = 5; % OG and Washout
+transientNumPts = 3; % OG and Washout
 
 if nargin<3 || isempty(groups)
     groups=fields(SMatrix);          
@@ -167,11 +167,20 @@ for g=1:ngroups
     end   
     
     %calculate relative after-effects
-    transfer=[transfer; 100*(ogafter./tmcatch)];
-    washout=[washout; 100*(tmafter./tmcatch)];
+%     
+    transfer=[transfer; 100*bsxfun(@rdivide,ogafter,tmcatch(:,4))];
+    washout=[washout; 100*bsxfun(@rdivide,tmafter,tmcatch(:,4))];
 
-    transfer2=[transfer2; 100*(ogafter./tmsteady2)];
-    washout2=[washout2; 100*(tmafter./tmsteady2)];
+    
+%     transfer=[transfer; 100*(ogafter./tmcatch)];
+%     washout=[washout; 100*(tmafter./tmcatch)];
+
+
+    transfer2=[transfer2; 100*bsxfun(@rdivide,ogafter,tmsteady2(:,4))];
+    washout2=[washout2; 100*bsxfun(@rdivide,tmafter,tmsteady2(:,4))];
+    
+%     transfer2=[transfer2; 100*(ogafter./tmsteady2)];
+%     washout2=[washout2; 100*(tmafter./tmsteady2)];
     
     nSubs=length(subjects);
     
@@ -225,12 +234,12 @@ if nargin>4 && ~isempty(plotFlag)
     epochs=fields(results);
 
     %plot first five epochs
-    numPlots=5*length(params); 
-    ah=optimizedSubPlot(numPlots,length(params),5,'ltr');
+    numPlots=4*length(params); 
+    ah=optimizedSubPlot(numPlots,length(params),4,'ltr');
     i=1;
     for p=1:length(params)
         limy=[];
-        for t=1:5    
+        for t=2:5    
             axes(ah(i))
             hold on        
             for b=1:ngroups
@@ -253,17 +262,17 @@ if nargin>4 && ~isempty(plotFlag)
             i=i+1;
 
         end
-        set(ah(p*5-4:p*5),'Ylim',[min(limy) max(limy)])
+%         set(ah(p*5-4:p*5),'Ylim',[min(limy) max(limy)])
     end
 
 
     %plot last four epochs
-    numPlots=4*length(params);
-    ah=optimizedSubPlot(numPlots,length(params),4,'ltr');
+    numPlots=2*length(params);
+    ah=optimizedSubPlot(numPlots,length(params),2,'ltr');
     i=1;
     for p=1:length(params)
         %limy=[];
-        for t=6:9
+        for t=6:7
             axes(ah(i))
             hold on        
             for b=1:ngroups
