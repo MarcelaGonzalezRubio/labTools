@@ -22,9 +22,9 @@ for i=1:length(fileList)
         %get group
         group=adaptData.subData.ID;
         spaces=find(group==' ');
-        abrevGroup=group(spaces+1);
+        %abrevGroup=group(spaces+1);
         group=group(ismember(group,['A':'Z' 'a':'z']));
-        abrevGroup=[group];
+        abrevGroup=group;
         %get conditions
         conditions=adaptData.metaData.conditionName;
         conditions=conditions(~cellfun('isempty',conditions));
