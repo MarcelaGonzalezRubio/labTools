@@ -720,7 +720,7 @@ classdef adaptationData
 %                       end
 
                     %to plot the max number of pts in each condition:
-                    [maxPts,loc]=nanmax(numPts.(cond{c})); %Note: a colliding version had nanmin here instead of nanmax. I believe this is the correct form.
+                    [maxPts,loc]=nanmin(numPts.(cond{c})); %Note: a colliding version had nanmin here instead of nanmax. I believe this is the correct form.
                     while maxPts>1.25*nanmax(numPts.(cond{c})([1:loc-1 loc+1:end]))
                         numPts.(cond{c})(loc)=nanmean(numPts.(cond{c})([1:loc-1 loc+1:end])); %do not include min in mean
                         [maxPts,loc]=nanmax(numPts.(cond{c}));
