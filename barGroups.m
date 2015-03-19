@@ -74,7 +74,7 @@ for g=1:ngroups
         %remove baseline bias
         adaptData=adaptData.removeBias;
         
-        if nargin>3 && findMaxPerturb==1 %|| nargin>3 && ~isempty(findMaxPerturb)
+        if nargin>3 && findMaxPerturb==1 %0|| nargin>3 && ~isempty(findMaxPerturb)
             
 %             %calculate TM and OG base in same manner as calculating OG post and TM
 %             %post to ensure that they are different.
@@ -168,16 +168,16 @@ for g=1:ngroups
     
     %calculate relative after-effects
 %     
-    transfer=[transfer; 100*bsxfun(@rdivide,ogafter,tmcatch(:,4))];
-    washout=[washout; 100*bsxfun(@rdivide,tmafter,tmcatch(:,4))];
+    transfer=[transfer; 100*bsxfun(@rdivide,ogafter,tmcatch(:,1))];
+    washout=[washout; 100*bsxfun(@rdivide,tmafter,tmcatch(:,1))];
 
     
 %     transfer=[transfer; 100*(ogafter./tmcatch)];
 %     washout=[washout; 100*(tmafter./tmcatch)];
 
 
-    transfer2=[transfer2; 100*bsxfun(@rdivide,ogafter,tmsteady2(:,4))];
-    washout2=[washout2; 100*bsxfun(@rdivide,tmafter,tmsteady2(:,4))];
+    transfer2=[transfer2; 100*bsxfun(@rdivide,ogafter,tmsteady2(:,1))];
+    washout2=[washout2; 100*bsxfun(@rdivide,tmafter,tmsteady2(:,1))];
     
 %     transfer2=[transfer2; 100*(ogafter./tmsteady2)];
 %     washout2=[washout2; 100*(tmafter./tmsteady2)];
