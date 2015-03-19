@@ -1,4 +1,4 @@
-% function results=SyncPython(subject,typeBiofeedback)
+function results=SyncPython(subject,typeBiofeedback)
 %typeBiofeedback dymamics=1, Statics=0.
 subject='PST09';
 typeBiofeedback=0;
@@ -23,10 +23,10 @@ Steps=[];
    
 results.locRindex=[];
 results.locLindex=[];
-results.alphaRPytonGood=[];
-results.alphaLPytonGood=[];
-results.RtargetGood=[];
-results.LtargetGood=[];
+results.alphaRPyton=[];
+results.alphaLPyton=[];
+results.Rtarget=[];
+results.Ltarget=[];
 results.RscaleGood=[];
 results.LscaleGood=[];
 results.GoodRHS=[];
@@ -63,12 +63,12 @@ results.GoodLHS=[];
     alphaL_time=[];
     alphaRPyton=[];
     alphaLPyton=[];
-    alphaRPytonGood=[];
-    alphaLPytonGood=[];
+    alphaRPyton=[];
+    alphaLPyton=[];
     Rtarget=[];
     Ltarget=[];
-    RtargetGood=[];
-    LtargetGood=[];
+    Rtarget=[];
+    Ltarget=[];
     Rscale=[];
     Lscale=[];
     RscaleGood=[];
@@ -91,38 +91,37 @@ results.GoodLHS=[];
         GRRz=expData.data{j}.GRFData.Data(:,9);
         GRLz=expData.data{j}.GRFData.Data(:,3);
         
-        %Converting force plate data from 960Hz to 120Hz
+%      Converting force plate data from 960Hz to 120Hz
         NexusRlowFreq=resample(GRRz,1,8);
         NexusLlowFreq=resample(GRLz,1,8);
         
         %Creating NaN matrix with the lenght of the data
-%         newData=nan((((outmat(end,1)-outmat(1,1)))+1),2);
-%         newData2=nan((((outmat(end,1)-outmat(1,1)))+1),size(header,2));
-%         
-%         %Making frames from Pyton start at 1
-%         outmat(:,1)=outmat(:,1)-outmat(1,1)+1;
-%         
-%         data=unique(outmat(:,1));
-%         
-%         %finding unique colums
-%         for i=1:length(data)
-%             [datarows(i),~]=find(outmat(:,1)==data(i),1,'first');
-%         end
-%         
-%         outmat=outmat(datarows,:);
-%         %Calculating the gap's length for pyton data
-% %         gap=diff(outmat(:,1));
-% %         figure()
-% %         plot(gap,'b')
-%         
-%         %Creating a linear interpolate matrix from Pyton data
-%         newData=interp1(outmat(:,1),outmat(:,1:end),[outmat(1,1):outmat(end,1)]);
-%         
-%         %Creating a Matrix with NaN in gaps from Pyton
-%         for i=1:length(outmat)
-%             newData2(outmat(i,1),1:end)=outmat(i,:);
-%         end
-        load newdata.mat
+        newData=nan((((outmat(end,1)-outmat(1,1)))+1),2);
+        newData2=nan((((outmat(end,1)-outmat(1,1)))+1),size(header,2));
+        
+        %Making frames from Pyton start at 1
+        outmat(:,1)=outmat(:,1)-outmat(1,1)+1;
+        
+        data=unique(outmat(:,1));
+        
+        %finding unique colums
+        for i=1:length(data)
+            [datarows(i),~]=find(outmat(:,1)==data(i),1,'first');
+        end
+        
+        outmat=outmat(datarows,:);
+        %Calculating the gap's length for pyton data
+%         gap=diff(outmat(:,1));
+%         figure()
+%         plot(gap,'b')
+        
+        %Creating a linear interpolate matrix from Pyton data
+        newData=interp1(outmat(:,1),outmat(:,1:end),[outmat(1,1):outmat(end,1)]);
+        
+        %Creating a Matrix with NaN in gaps from Pyton
+        for i=1:length(outmat)
+            newData2(outmat(i,1),1:end)=outmat(i,:);
+        end
         %%
         %Determination of crosscorrelation between Nexus at 100Hz and Interpolate
         %Pyton data 
@@ -147,7 +146,7 @@ results.GoodLHS=[];
         
 %         NexusLlowFreq=NexusLlowFreq(1:length(newData));
 %         NexusRlowFreq=NexusRlowFreq(1:length(newData));
-        
+      
         %%
         %Finding HS from Nexus at 100HZ and Interpolated Pyton data, interpolate
         %data is used to make sure that we dont take in consideration extras HS.
@@ -287,12 +286,13 @@ results.GoodLHS=[];
         %%
         %Good strides
         GoodEvents=expData.data{j}.adaptParams.Data(:,1);
+        locRindex=locRindex(1:length(GoodEvents),1); 
+        locLindex=locLindex(1:length(GoodEvents),1);
         GoodRHS=newData2(locRindex,8);
         GoodLHS=newData2(locLindex,9);
-        GoodRHS=GoodRHS(GoodEvents==1);
-        GoodLHS=GoodLHS(GoodEvents==1);
-        results.locLindex=[results.locLindex;locLindex(GoodEvents==1)];
-        results.locRindex=[results.locRindex;locRindex(GoodEvents==1)];
+       
+        results.locLindex=[results.locLindex;locLindex];
+        results.locRindex=[results.locRindex;locRindex];
         results.GoodRHS=[results.GoodRHS;GoodRHS];
         results.GoodLHS=[results.GoodLHS;GoodLHS];
         
@@ -306,35 +306,31 @@ results.GoodLHS=[];
         %alpha values at HS
         alphaRPyton=newData(locRindex,10)*1000;
         alphaLPyton=newData(locLindex,11)*1000;
-        alphaRPytonGood=alphaRPyton(GoodEvents==1);
-        alphaLPytonGood=alphaLPyton(GoodEvents==1);
-        results.alphaRPytonGood=[results.alphaRPytonGood;alphaRPytonGood];
-        results.alphaLPytonGood=[results.alphaLPytonGood;alphaLPytonGood];
+      
+        results.alphaRPyton=[results.alphaRPyton;alphaRPyton];
+        results.alphaLPyton=[results.alphaLPyton;alphaLPyton];
         %
         if typeBiofeedback ==1
             Rtarget=newData2(locRindex,12)*1000;
             Ltarget=newData2(locLindex,13)*1000;
-            RtargetGood=Rtarget(GoodEvents==1);
-            LtargetGood=Ltarget(GoodEvents==1);
+           
         elseif typeBiofeedback== 0 %static target
             Rscale=newData2(locRindex,12);
             Lscale=newData2(locLindex,13);
-            RscaleGood=Rscale(GoodEvents==1);
-            LscaleGood=Lscale(GoodEvents==1);
+           
             Rtarget2Good=(0.25./RscaleGood)*1000;
             Ltarget2Good=(0.25./LscaleGood)*1000;
             Rtarget=newData(locRindex,18)*1000;
             Ltarget=newData(locLindex,19)*1000;
-            RtargetGood=Rtarget(GoodEvents==1);
-            LtargetGood=Ltarget(GoodEvents==1);
+           
         end
        %% 
 %Comprobando si los pasos fueron clasificados de la manera correcta
  if typeBiofeedback==1 
      for i=1:length(GoodRHS)
-         if abs(alphaRPytonGood(i)-RtargetGood(i))<=25
+         if abs(alphaRPyton(i)-Rtarget(i))<=25
              GoodR(i,1)=1;
-         elseif abs(alphaRPytonGood(i)-RtargetGood(i))>25  
+         elseif abs(alphaRPyton(i)-Rtarget(i))>25  
              GoodR(i,1)=0;
          elseif isnan(GoodRHS(i)) 
              GoodR(i,1)=NaN;
@@ -345,9 +341,9 @@ results.GoodLHS=[];
      end
      
      for i=1:length(GoodLHS)
-         if abs(alphaLPytonGood(i)-LtargetGood(i))<=25
+         if abs(alphaLPyton(i)-Ltarget(i))<=25
              GoodL(i,1)=1;
-         elseif abs(alphaLPytonGood(i)-LtargetGood(i))>25 
+         elseif abs(alphaLPyton(i)-Ltarget(i))>25 
              GoodL(i,1)=0;
          elseif isnan(GoodLHS(i)) 
              GoodL(i,1)=NaN;
@@ -360,9 +356,9 @@ results.GoodLHS=[];
          
  if typeBiofeedback==0
      for i=1:length(GoodRHS)
-         if abs(alphaRPytonGood(i)-RtargetGood(i))<=25
+         if abs(alphaRPyton(i)-Rtarget(i))<=25
              GoodR(i,1)=1;
-          elseif abs(alphaRPytonGood(i)-RtargetGood(i))>25
+          elseif abs(alphaRPyton(i)-Rtarget(i))>25
              GoodR(i,1)=0;
            elseif isnan(GoodRHS(i)) 
              GoodR(i,1)=NaN;
@@ -373,9 +369,9 @@ results.GoodLHS=[];
      end
      
       for i=1:length(GoodLHS)
-          if abs(alphaLPytonGood(i)-LtargetGood(i))<=25
+          if abs(alphaLPyton(i)-Ltarget(i))<=25
              GoodL(i,1)=1;
-          elseif abs(alphaLPytonGood(i)-LtargetGood(i))>25
+          elseif abs(alphaLPyton(i)-Ltarget(i))>25
              GoodL(i,1)=0;
           elseif isnan(GoodLHS(i)) 
              GoodL(i,1)=NaN;
@@ -389,30 +385,30 @@ results.GoodLHS=[];
 alphaRnexus=adaptData.getParamInCond({'alphaFast'},condition{p});
 alphaLnexus=adaptData.getParamInCond({'alphaTemp'},condition{p});
 %plot of the alpha values. Tolerance indicade 
-ystdRU=25*ones([length(GoodRHS),1])+RtargetGood;
-ystdRL=-25*ones([length(GoodRHS),1])+RtargetGood;
+ystdRU=25*ones([length(GoodRHS),1])+Rtarget;
+ystdRL=-25*ones([length(GoodRHS),1])+Rtarget;
 
-ystdLU=25*ones([length(GoodLHS),1])+LtargetGood;
-ystdLL=-25*ones([length(GoodLHS),1])+LtargetGood;
+ystdLU=25*ones([length(GoodLHS),1])+Ltarget;
+ystdLL=-25*ones([length(GoodLHS),1])+Ltarget;
 
 figure()
 hold on 
-toleranceR=plot(1:length(GoodRHS),ystdRU,'--r',1:length(GoodRHS),ystdRL,'--r',1:length(GoodRHS),RtargetGood,'r');
+toleranceR=plot(1:length(GoodRHS),ystdRU,'--r',1:length(GoodRHS),ystdRL,'--r',1:length(GoodRHS),Rtarget,'r');
 r=0;
  for i=1:length(GoodRHS)
 
      if GoodRHS(i)==1
-         gPr=plot(i,alphaRPytonGood(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor','g');
+         gPr=plot(i,alphaRPyton(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor','g');
          GoodR(i,1)=1;
          
      elseif GoodRHS(i)==0
          
-         blackPr=plot(i,alphaRPytonGood(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',[0 0 0]);
+         blackPr=plot(i,alphaRPyton(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',[0 0 0]);
          GoodR(i,1)=0;
      end
-     if abs(alphaRnexus(i)-RtargetGood(i))<25
+     if abs(alphaRnexus(i)-Rtarget(i))<25
          RNr=plot(i,alphaRnexus(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor','r');
-     elseif abs(alphaRnexus(i)-RtargetGood(i))>=25
+     elseif abs(alphaRnexus(i)-Rtarget(i))>=25
          blackNr=plot(i,alphaRnexus(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor','b');
      r=r+1;
      end
@@ -430,21 +426,21 @@ figure()
 hold on 
 
 
-toleranceL=plot(1:length(GoodLHS),ystdLU,'--r',1:length(GoodLHS),ystdLL,'--r',1:length(GoodLHS),LtargetGood,'r');
+toleranceL=plot(1:length(GoodLHS),ystdLU,'--r',1:length(GoodLHS),ystdLL,'--r',1:length(GoodLHS),Ltarget,'r');
 l=0;
 for i=1:length(GoodLHS) 
     if GoodLHS(i)==1
         
-        gPL=plot(i,alphaLPytonGood(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor','g');
+        gPL=plot(i,alphaLPyton(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor','g');
         
     elseif GoodLHS(i)==0
         
-        blackPL=plot(i,alphaLPytonGood(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',[0 0 0]);
+        blackPL=plot(i,alphaLPyton(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',[0 0 0]);
         GoodL(i,1)=0;
     end
-    if abs(alphaLnexus(i)-LtargetGood(i))<25
+    if abs(alphaLnexus(i)-Ltarget(i))<25
        RNL= plot(i,alphaLnexus(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor','r');
-    elseif abs(alphaLnexus(i)-LtargetGood(i))>=25
+    elseif abs(alphaLnexus(i)-Ltarget(i))>=25
        blackNL= plot(i,alphaLnexus(i),'o','MarkerSize',8,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor','b');
     l=l+1;
     end
