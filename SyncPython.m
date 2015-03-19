@@ -1,7 +1,7 @@
-function results=SyncPython(subject,typeBiofeedback)
+% function results=SyncPython(subject,typeBiofeedback)
 %typeBiofeedback dymamics=1, Statics=0.
-% subject='PST08';
-% typeBiofeedback=0;
+subject='PST09';
+typeBiofeedback=0;
 load([subject 'params.mat'])
 load([subject '.mat'])
 load([subject 'RAW.mat'])
@@ -32,8 +32,8 @@ results.LscaleGood=[];
 results.GoodRHS=[];
 results.GoodLHS=[];
  
-for p=1:length(condition)
-%     for p=1:2
+% for p=1:length(condition)
+    for p=2:2
     
     j=[];
     GRRz=[];
@@ -81,8 +81,8 @@ for p=1:length(condition)
     alphaLnexus=[];
     
     if strcmp(condition{p},'Gradual adaptation') || strcmp(condition{p},'Re-adaptation')
-        w=w+1;
-% w=1;
+%         w=w+1;
+w=1;
         load(['Pyton' num2str(w) '.mat'])
         z=expData.metaData.getConditionIdxsFromName(condition{p});
         j=adaptData.metaData.trialsInCondition{z};
@@ -91,12 +91,12 @@ for p=1:length(condition)
         GRRz=expData.data{j}.GRFData.Data(:,9);
         GRLz=expData.data{j}.GRFData.Data(:,3);
         
-        %Converting force plate data from 1000Hz to 100Hz
+        %Converting force plate data from 960Hz to 120Hz
         NexusRlowFreq=resample(GRRz,1,8);
         NexusLlowFreq=resample(GRLz,1,8);
         
         %Creating NaN matrix with the lenght of the data
-        newData=nan((((outmat(end,1)-outmat(1,1)))+1),size(header,2));
+        newData=nan((((outmat(end,1)-outmat(1,1)))+1),2);
         newData2=nan((((outmat(end,1)-outmat(1,1)))+1),size(header,2));
         
         %Making frames from Pyton start at 1
@@ -123,9 +123,9 @@ for p=1:length(condition)
             newData2(outmat(i,1),1:end)=outmat(i,:);
         end
         
-        
+        %%
         %Determination of crosscorrelation between Nexus at 100Hz and Interpolate
-        %Pyton data
+        %Pyton data 
         [acor, lag]=xcorr(NexusRlowFreq,newData(:,2));
         [~,I]=max((acor));
         timeDiff=lag(I);
@@ -133,13 +133,17 @@ for p=1:length(condition)
             newData=newData(abs(timeDiff)+1:end,1:end);
             newData2=newData2(abs(timeDiff)+1:end,1:end);
         elseif timeDiff>0
-            NexusRlowFreq =NexusRlowFreq(abs(timeDiff)+1:end,1:end);
-            NexusLlowFreq =NexusLlowFreq(abs(timeDiff)+1:end,1:end);
+             newData=[zeros([timeDiff,size(header,2)]);newData];
+             newData2=[zeros([timeDiff,size(header,2)]);newData2];
         end
         
 %         hola=labTimeSeries(newData2,0,0.01,{'FrameNumber','Rfz','Lfz','RHS','LHS','RGORB','LGORB','Ralpha','Lalpha','Rscale','Lscale','RHIPY','LHIPY','RANKY','LANKY','targetR','targetL'});
 
- 
+        figure()
+        plot(NexusRlowFreq,'b')
+        hold on
+        plot(newData(:,2), 'r')
+        plot(newData2(:,2), 'g')
         
 %         NexusLlowFreq=NexusLlowFreq(1:length(newData));
 %         NexusRlowFreq=NexusRlowFreq(1:length(newData));
@@ -150,14 +154,14 @@ for p=1:length(condition)
         [LHSnexus,RHSnexus]= getEventsFromForces(NexusLlowFreq,NexusRlowFreq,120);
         [LHSpyton,RHSpyton]= getEventsFromForces(newData(:,3),newData(:,2),120);
         
-                figure()
+        figure()
         plot(NexusRlowFreq,'b')
         hold on
         plot(newData(:,2), 'r')
         plot(newData2(:,2), 'g')
         plot(RHSnexus*100,'k')
-        plot(RHSpyton*100,'m')
-        plot(newData2(:,4),'y')
+        plot(RHSpyton*100,'--m')
+        plot(newData2(:,4)*100,'--y')
         legend('Nexus','Interpolate Pyton','Pyton','RHSnexus','RHSpyton','RHS python matrix')
         title('Sync of R Force plate data')
 %                 
@@ -167,19 +171,19 @@ for p=1:length(condition)
         plot(newData(:,3), 'r')
         plot(newData2(:,3), 'g')
         plot(LHSnexus*100,'k')
-        plot(LHSpyton*100,'m')
-        plot(newData2(:,5),'y')
+        plot(LHSpyton*100,'--m')
+        plot(newData2(:,5)*100,'--y')
         legend('Nexus','Interpolate Pyton','Pyton','LHSnexus','LHSpyton','LHS python matrix')
         title('Sync of L Force plate data')
         %%
-        %localication of HS
+        %localication of HS==1);
+        locLHSpyton=find(LHSpyton==1);
         locRHSpyton=find(RHSpyton==1);
         locRHSnexus=find(RHSnexus==1);
-        locLHSpyton=find(LHSpyton==1);
         locLHSnexus=find(LHSnexus==1);
         
-        locRindex=find(newData(:,4)==1);
-        locLindex=find(newData(:,5)==1);
+        locRindex=find(newData2(:,4)==1);
+        locLindex=find(newData2(:,5)==1);
         
         if length(locRindex)<length(locRHSpyton)
             warning('No all the HS where detected')
@@ -480,18 +484,19 @@ axis tight
     StepsL=[StepsL;StepsL2];
     
 end
+
 %%
-pData=adaptData.data;
-labels={'TargetHitR', 'TargetHitL', 'TargetHit'};
-[aux,idx]=pData.isaLabel(labels);
-if all(aux)
-    adaptData.data.Data(:,idx)=[StepsR,StepsL,Steps];
-else
-this=paramData([adaptData.data.Data,StepsR,StepsL,Steps],[adaptData.data.labels 'TargetHitR' 'TargetHitL' 'TargetHit'],adaptData.data.indsInTrial,adaptData.data.trialTypes);
-adaptData=adaptationData(rawExpData.metaData,rawExpData.subData,this);
-end
-saveloc=[];
-save([saveloc subject 'params.mat'],'adaptData');
+% pData=adaptData.data;
+% labels={'TargetHitR', 'TargetHitL', 'TargetHit'};
+% [aux,idx]=pData.isaLabel(labels);
+% if all(aux)
+%     adaptData.data.Data(:,idx)=[StepsR,StepsL,Steps];
+% else
+% this=paramData([adaptData.data.Data,StepsR,StepsL,Steps],[adaptData.data.labels 'TargetHitR' 'TargetHitL' 'TargetHit'],adaptData.data.indsInTrial,adaptData.data.trialTypes);
+% adaptData=adaptationData(rawExpData.metaData,rawExpData.subData,this);
+% end
+% saveloc=[];
+% save([saveloc subject 'params.mat'],'adaptData');
 
 
-end
+%end
