@@ -43,8 +43,8 @@ results.GoodLHS=[];
     newData=[];
     newData2=[];
     datarows=[];
-    LHSnexus=[];
-    RHSnexus=[];
+    locLHSnexus=[];
+    locRHSnexus=[];
     LHSpyton=[];
     RHSpyton=[];
     locRHSpyton=[];
@@ -81,8 +81,8 @@ results.GoodLHS=[];
     alphaLnexus=[];
     
     if strcmp(condition{p},'Gradual adaptation') || strcmp(condition{p},'Re-adaptation')
-%         w=w+1;
-w=1;
+        w=w+1;
+
         load(['Pyton' num2str(w) '.mat'])
         z=expData.metaData.getConditionIdxsFromName(condition{p});
         j=adaptData.metaData.trialsInCondition{z};
@@ -96,33 +96,33 @@ w=1;
         NexusLlowFreq=resample(GRLz,1,8);
         
         %Creating NaN matrix with the lenght of the data
-        newData=nan((((outmat(end,1)-outmat(1,1)))+1),2);
-        newData2=nan((((outmat(end,1)-outmat(1,1)))+1),size(header,2));
-        
-        %Making frames from Pyton start at 1
-        outmat(:,1)=outmat(:,1)-outmat(1,1)+1;
-        
-        data=unique(outmat(:,1));
-        
-        %finding unique colums
-        for i=1:length(data)
-            [datarows(i),~]=find(outmat(:,1)==data(i),1,'first');
-        end
-        
-        outmat=outmat(datarows,:);
-        %Calculating the gap's length for pyton data
-%         gap=diff(outmat(:,1));
-%         figure()
-%         plot(gap,'b')
-        
-        %Creating a linear interpolate matrix from Pyton data
-        newData=interp1(outmat(:,1),outmat(:,1:end),[outmat(1,1):outmat(end,1)]);
-        
-        %Creating a Matrix with NaN in gaps from Pyton
-        for i=1:length(outmat)
-            newData2(outmat(i,1),1:end)=outmat(i,:);
-        end
-        
+%         newData=nan((((outmat(end,1)-outmat(1,1)))+1),2);
+%         newData2=nan((((outmat(end,1)-outmat(1,1)))+1),size(header,2));
+%         
+%         %Making frames from Pyton start at 1
+%         outmat(:,1)=outmat(:,1)-outmat(1,1)+1;
+%         
+%         data=unique(outmat(:,1));
+%         
+%         %finding unique colums
+%         for i=1:length(data)
+%             [datarows(i),~]=find(outmat(:,1)==data(i),1,'first');
+%         end
+%         
+%         outmat=outmat(datarows,:);
+%         %Calculating the gap's length for pyton data
+% %         gap=diff(outmat(:,1));
+% %         figure()
+% %         plot(gap,'b')
+%         
+%         %Creating a linear interpolate matrix from Pyton data
+%         newData=interp1(outmat(:,1),outmat(:,1:end),[outmat(1,1):outmat(end,1)]);
+%         
+%         %Creating a Matrix with NaN in gaps from Pyton
+%         for i=1:length(outmat)
+%             newData2(outmat(i,1),1:end)=outmat(i,:);
+%         end
+        load newdata.mat
         %%
         %Determination of crosscorrelation between Nexus at 100Hz and Interpolate
         %Pyton data 
@@ -139,11 +139,11 @@ w=1;
         
 %         hola=labTimeSeries(newData2,0,0.01,{'FrameNumber','Rfz','Lfz','RHS','LHS','RGORB','LGORB','Ralpha','Lalpha','Rscale','Lscale','RHIPY','LHIPY','RANKY','LANKY','targetR','targetL'});
 
-        figure()
-        plot(NexusRlowFreq,'b')
-        hold on
-        plot(newData(:,2), 'r')
-        plot(newData2(:,2), 'g')
+%         figure()
+%         plot(NexusRlowFreq,'b')
+%         hold on
+%         plot(newData(:,2), 'r')
+%         plot(newData2(:,2), 'g')
         
 %         NexusLlowFreq=NexusLlowFreq(1:length(newData));
 %         NexusRlowFreq=NexusRlowFreq(1:length(newData));
@@ -151,36 +151,44 @@ w=1;
         %%
         %Finding HS from Nexus at 100HZ and Interpolated Pyton data, interpolate
         %data is used to make sure that we dont take in consideration extras HS.
-        [LHSnexus,RHSnexus]= getEventsFromForces(NexusLlowFreq,NexusRlowFreq,120);
+%         [LHSnexus,RHSnexus]= getEventsFromForces(NexusLlowFreq,NexusRlowFreq,120);
         [LHSpyton,RHSpyton]= getEventsFromForces(newData(:,3),newData(:,2),120);
         
-        figure()
-        plot(NexusRlowFreq,'b')
-        hold on
-        plot(newData(:,2), 'r')
-        plot(newData2(:,2), 'g')
-        plot(RHSnexus*100,'k')
-        plot(RHSpyton*100,'--m')
-        plot(newData2(:,4)*100,'--y')
-        legend('Nexus','Interpolate Pyton','Pyton','RHSnexus','RHSpyton','RHS python matrix')
-        title('Sync of R Force plate data')
-%                 
-        figure()
-        plot(NexusLlowFreq,'b')
-        hold on
-        plot(newData(:,3), 'r')
-        plot(newData2(:,3), 'g')
-        plot(LHSnexus*100,'k')
-        plot(LHSpyton*100,'--m')
-        plot(newData2(:,5)*100,'--y')
-        legend('Nexus','Interpolate Pyton','Pyton','LHSnexus','LHSpyton','LHS python matrix')
-        title('Sync of L Force plate data')
+        if expData.data{j}.metaData.refLeg == 'L'
+            locLHSnexus=adaptData.getParamInCond({'indSHSD'},{'Gradual adaptation'});
+            locRHSnexus=adaptData.getParamInCond({'indFHSD'},{'Gradual adaptation'});
+        elseif expData.data{j}.metaData.refLeg == 'R'
+            locLHSnexus=adaptData.getParamInCond({'indFHSD'},{'Gradual adaptation'});
+            locRHSnexus=adaptData.getParamInCond({'indSHSD'},{'Gradual adaptation'});
+        end
+        
+%         figure()
+%         plot(NexusRlowFreq,'b')
+%         hold on
+%         plot(newData(:,2), 'r')
+%         plot(newData2(:,2), 'g')
+%         plot(RHSnexus*100,'k')
+%         plot(RHSpyton*100,'--m')
+%         plot(newData2(:,4)*100,'--y')
+%         legend('Nexus','Interpolate Pyton','Pyton','RHSnexus','RHSpyton','RHS python matrix')
+%         title('Sync of R Force plate data')
+% %                 
+%         figure()
+%         plot(NexusLlowFreq,'b')
+%         hold on
+%         plot(newData(:,3), 'r')
+%         plot(newData2(:,3), 'g')
+%         plot(LHSnexus*100,'k')
+%         plot(LHSpyton*100,'--m')
+%         plot(newData2(:,5)*100,'--y')
+%         legend('Nexus','Interpolate Pyton','Pyton','LHSnexus','LHSpyton','LHS python matrix')
+%         title('Sync of L Force plate data')
         %%
         %localication of HS==1);
         locLHSpyton=find(LHSpyton==1);
         locRHSpyton=find(RHSpyton==1);
-        locRHSnexus=find(RHSnexus==1);
-        locLHSnexus=find(LHSnexus==1);
+%         locRHSnexus=find(RHSnexus==1);
+%         locLHSnexus=find(LHSnexus==1);
         
         locRindex=find(newData2(:,4)==1);
         locLindex=find(newData2(:,5)==1);
@@ -196,8 +204,7 @@ w=1;
             FrameDiffR=locRindex(1:end-diffLengthR)-locRHSpyton;
             IsBadR=find(FrameDiffR<=-10);
             if isempty(IsBadR)
-                break
-                display('Something is WRONG!')
+                break  
             else
                 locRindex(IsBadR(1))=[];
             end
@@ -209,45 +216,41 @@ w=1;
             IsBad=find(FrameDiff<=-10);
             if isempty(IsBad)
                 break
-                display('Something is WRONG!')
             else
                 locLindex(IsBad(1))=[];
             end
         end
         
         if length(locRHSnexus)<length(locRindex)
-          FrameDiffR=[];
-          IsBadR=[];
+            FrameDiffR=[];
+            IsBadR=[];
             while length(locRHSnexus)~=length(locRindex)
-            diffLengthR=length(locRindex)-length(locRHSnexus);
-            FrameDiffR=locRindex(1:end-diffLengthR)-locRHSnexus;
-            IsBadR=find(FrameDiffR<=-10);
-            if isempty(IsBadR)
-                break
-                display('Something is WRONG!')
-            else
-                locRindex(IsBadR(1))=[];
+                diffLengthR=length(locRindex)-length(locRHSnexus);
+                FrameDiffR=-locRindex(1:end-diffLengthR)+locRHSnexus;
+                IsBadR=find(abs(FrameDiffR)>10);
+                if isempty(IsBadR)
+                    break
+                else
+                    locRindex(IsBadR(1))=[];
+                end
             end
-        end
         end
         
         if length(locLHSnexus)<length(locLindex)
             FrameDiff=[]
             IsBad=[];
-        while length(locLHSpyton)~=length(locLHSnexus)
-            diffLength=length(locLindex)-length(locLHSnexus);
-            FrameDiff=locLindex(1:end-diffLength)-locLHSnexus;
-            IsBad=find(FrameDiff<=-10);
-            if isempty(IsBad)
-                break
-                display('Something is WRONG!')
-            else
-                locLindex(IsBad(1))=[];
+            while length(locLindex)~=length(locLHSnexus)
+                diffLength=length(locLindex)-length(locLHSnexus);
+                FrameDiff=-locLindex(1:end-diffLength)+locLHSnexus;
+                IsBad=find(abs(FrameDiff)>10);
+                if isempty(IsBad)
+                    break
+                else
+                    locLindex(IsBad(1))=[];
+                end
             end
         end
-        end
-        %          display(['RHS nexus  ' num2str(length(locRHSpyton)) '   LHS nexus  ' num2str(length(locLHSpyton))])
-        %          display(['RHS pyton  ' num2str(length(locRindex)) '   LHS pyton  ' num2str(length(locLindex))])
+     
         if length(locRHSnexus)>length(locRindex)
             warning(['Gaps affected RHS detection  ' condition{p} ])
             
@@ -257,7 +260,6 @@ w=1;
                 IsBadR=find(FrameDiffR<=-10);
                 if isempty(IsBadR)
                     break
-                    display('Something is WRONG!')
                 else
                     locfakeR=[locRindex(1:IsBadR-1);locRHSnexus(IsBadR(1));locRindex(IsBadR:end)];
                     locRindex=locfakeR;
@@ -273,7 +275,6 @@ w=1;
                 IsBadL=find(FrameDiffL<=-10);
                 if isempty(IsBadL)
                     break
-                    display('Something is WRONG!')
                 else
                     locfakeL=[locLindex(1:IsBadL-1);locLHSnexus(IsBadL(1));locLindex(IsBadL:end)];
                     locLindex=locfakeL;
@@ -497,6 +498,6 @@ end
 % end
 % saveloc=[];
 % save([saveloc subject 'params.mat'],'adaptData');
-
-
-%end
+% 
+% 
+% end
