@@ -57,7 +57,7 @@ classdef labTimeSeries  < timeseries
             auxLabel=this.labels(labelIdx(boolFlag==1));
         end
         
-        function newTS=getDataAsTS(this,label)
+        function [newTS,auxLabel]=getDataAsTS(this,label)
             [data,time,auxLabel]=getDataAsVector(this,label);
             newTS=labTimeSeries(data,time(1),this.sampPeriod,auxLabel);
         end
@@ -71,6 +71,8 @@ classdef labTimeSeries  < timeseries
                 auxLabel{1}=label;
             elseif isa(label,'cell')
                 auxLabel=label;
+            else
+                error('labTimeSeries:isaLabel','label input argument has to be a string or a cell array containing strings.')
             end
             
             N=length(auxLabel);
@@ -245,7 +247,7 @@ classdef labTimeSeries  < timeseries
                         t0=t1;
                         lastEventIdx=nextEventIdx;
                    else
-                        warning(['Events were not in order on stride ' num2str(i) ', returning empty labTimeSeries.'])
+                       warning(['Events were not in order on stride ' num2str(i) ', returning empty labTimeSeries.'])
                         if islogical(this.Data)
                             steppedDataArray{i,j}=labTimeSeries(false(0,size(this.Data,2)),zeros(1,0),1,this.labels);
                         else
@@ -317,15 +319,16 @@ classdef labTimeSeries  < timeseries
                 error('labTimeSeries:substituteNaNs','timeseries contains at least one label that is all NaN. Can''t replace those values (no data to use as reference).')
             end
             newData=zeros(size(this.Data));
+            this.Quality=zeros(size(this.Data),'int8');
              for i=1:size(this.Data,2) %Going through labels
                  auxIdx=~isnan(this.Data(:,i)); %Finding indexes for non-NaN data under this label
                  %Saving quality data (to mark which samples were
                  %interpolated)
-                 this.Quality=~auxIdx;
-                 this.QualityInfo.Code=[0 1];
-                 this.QualityInfo.Description={'good','missing'};
+                 this.Quality(:,i)=~auxIdx; %Matlab's timeseries stores this as int8. I would have preferred a sparse array.
                  this.Data(:,i)=interp1(this.Time(auxIdx),this.Data(auxIdx,i),this.Time,method,0); %Extrapolation values are filled with 0,
              end
+             this.QualityInfo.Code=[0 1];
+             this.QualityInfo.Description={'good','missing'};
         end
         
         %------------------
@@ -344,7 +347,7 @@ classdef labTimeSeries  < timeseries
         end
         
         %Display
-        function [h,plotHandles]=plot(this,h,labels,plotHandles,events,color) %Alternative plot: all the traces go in different axes
+        function [h,plotHandles]=plot(this,h,labels,plotHandles,events,color,lineWidth) %Alternative plot: all the traces go in different axes
             if nargin<2 || isempty(h)
                 h=figure;
             else
@@ -362,16 +365,19 @@ classdef labTimeSeries  < timeseries
                 [b,a]=getFigStruct(length(relLabels));
                 plotHandles=tight_subplot(b,a,[.05 .05],[.05 .05], [.05 .05]); %External function
             end
+            if nargin<7 || isempty(lineWidth)
+                lineWidth=2;
+            end
             ax2=[];
             h1=[];
             for i=1:N
                 h1(i)=plotHandles(i);
                 subplot(h1(i))
                 hold on
-                if nargin<6
-                    plot(this.Time,relData(:,i),'LineWidth',2)
+                if nargin<6 || isempty(color)
+                    plot(this.Time,relData(:,i),'LineWidth',lineWidth)
                 else
-                    plot(this.Time,relData(:,i),'LineWidth',2,'Color',color)
+                    plot(this.Time,relData(:,i),'LineWidth',lineWidth,'Color',color)
                 end
                 ylabel(relLabels{i})
                 %if i==ceil(N/2)
@@ -391,7 +397,7 @@ classdef labTimeSeries  < timeseries
                    grid on
                 end
             end
-            linkaxes([h1,ax2],'x')
+            %linkaxes([h1,ax2],'x')
             plotHandles=h1;  
         end
         
@@ -411,17 +417,21 @@ classdef labTimeSeries  < timeseries
     methods(Static)
         this=createLabTSFromTimeVector(data,time,labels); %Need to compute appropriate t0 and Ts constants and call the constructor. Tricky if time is not uniformly sampled.
         
-        function alignedTS=stridedTSToAlignedTS(stridedTS,N) %Need to correct this, so it aligns by all events, as opposed to just aligning the initial time-point
+        function [alignedTS,originalDurations]=stridedTSToAlignedTS(stridedTS,N) %Need to correct this, so it aligns by all events, as opposed to just aligning the initial time-point
             %To be used after splitByEvents
             if ~islogical(stridedTS{1}.Data(1))
                 aux=zeros(sum(N),size(stridedTS{1}.Data,2),size(stridedTS,1));
             else
                 aux=false(sum(N),size(stridedTS{1}.Data,2),size(stridedTS,1));
             end
-            for i=1:size(stridedTS,1) %Going over strides
+            Nstrides=size(stridedTS,1);
+            Nphases=size(stridedTS,2);
+            originalDurations=nan(Nstrides,Nphases);
+            for i=1:Nstrides %Going over strides
                 M=[0,cumsum(N)];
-                for j=1:size(stridedTS,2) %Going over aligned phases
+                for j=1:Nphases %Going over aligned phases
                     if isa(stridedTS{i,j},'labTimeSeries')
+                        originalDurations(i,j)=stridedTS{i,j}.timeRange;
                         if ~isempty(stridedTS{i,j}.Data)
                             aa=resampleN(stridedTS{i,j},N(j));
                             aux(M(j)+1:M(j+1),:,i)=aa.Data;
@@ -437,7 +447,7 @@ classdef labTimeSeries  < timeseries
                     end
                 end
             end
-            alignedTS=alignedTimeSeries(0,1/sum(N),aux,stridedTS{1}.labels);
+            alignedTS=alignedTimeSeries(0,1/sum(N),aux,stridedTS{1}.labels,N,cell(size(N)));
         end
         
         function [figHandle,plotHandles]=plotStridedTimeSeries(stridedTS,figHandle,plotHandles)
