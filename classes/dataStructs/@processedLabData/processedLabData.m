@@ -8,6 +8,7 @@ classdef processedLabData < labData
         procEMGData %processedEMGTS
         angleData %labTS (angles based off kinematics)
         adaptParams %labTS (parameters whcih characterize adaptation process) --> must be calculated, therefore not part of constructor.
+        %EMGData, which is inherited from labData, saves the FILTERED EMG data used for processing afterwards (not the RAW, which is saved in the not-procesed labData)
     end
     
     properties (Dependent)        
@@ -100,12 +101,14 @@ classdef processedLabData < labData
         function steppedDataArray=separateIntoStrides(this,triggerEvent) %Splitting into single strides!
             %triggerEvent needs to be one of the valid gaitEvent labels
                      
-            refLegEventList=this.getPartialGaitEvents(triggerEvent);
-            refIdxLst=find(refLegEventList==1);
-            auxTime=this.gaitEvents.Time;
+            %refLegEventList=this.getPartialGaitEvents(triggerEvent);
+            %refIdxLst=find(refLegEventList==1);
+            %auxTime=this.gaitEvents.Time;
+            
+            [strideIdxs,initTime,endTime]=getStrideInfo(this,triggerEvent);
             steppedDataArray={};
-            for i=1:length(refIdxLst)-1
-                steppedDataArray{i}=this.split(auxTime(refIdxLst(i)),auxTime(refIdxLst(find(refIdxLst(:)>refIdxLst(i),1,'first'))),'strideData');
+            for i=strideIdxs
+                steppedDataArray{i}=this.split(initTime(i),endTime(i),'strideData');
             end
         end
         
@@ -166,6 +169,34 @@ classdef processedLabData < labData
             steppedDataArray={};
             for i=1:length(refIdxLst)-2
                 steppedDataArray{i}=this.split(auxTime(refIdxLst(i)),auxTime(refIdxLst(find(refIdxLst(:)>refIdxLst(i+1),1,'first'))),'strideData');
+            end
+        end
+        
+        function [strideIdxs,initTime,endTime]=getStrideInfo(this,triggerEvent,endEvent)
+            if nargin<2 || isempty(triggerEvent)
+                triggerEvent=[this.metaData.refLeg 'HS']; %Using rHS as default event for striding.
+            end
+                refLegEventList=this.getPartialGaitEvents(triggerEvent);
+                refIdxLst=find(refLegEventList==1);
+                auxTime=this.gaitEvents.Time;
+                initTime=auxTime(refIdxLst(1:end-1));
+                strideIdxs=1:length(initTime);
+            if nargin<3 || isempty(endEvent) %using triggerEvent for endEvent
+                endTime=auxTime(refIdxLst(2:end));
+            else %End of interval depends on another event
+                endEventList=this.getPartialGaitEvents(endEvent);
+                endIdxLst=find(endEventList==1);
+                i=0;
+                noEnd=true;
+                while i<length(strideIdxs) && noEnd
+                    i=i+1;
+                    aux=auxTime(find(endIdxList>refIdxLst(i),1,'first')); 
+                    if ~isempty(aux)
+                        endTime(i)=aux;
+                    else
+                        endTime(i)=NaN;
+                    end
+                end
             end
         end
     end
