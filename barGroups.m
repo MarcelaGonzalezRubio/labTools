@@ -6,9 +6,9 @@ poster_colors;
 GreyOrder=[0 0 0 ;1 1 1;0.5 0.5 0.5;0.2 0.2 0.2;0.9 0.9 0.9;0.1 0.1 0.1;0.8 0.8 0.8;0.3 0.3 0.3;0.7 0.7 0.7];
 ColorOrder=[p_red; p_orange; p_fade_green; p_fade_blue; p_plum; p_green; p_blue; p_fade_red; p_lime; p_yellow; p_gray; p_black;p_red];
 
-catchNumPts = 3; % catch
+catchNumPts = 5; % catch
 steadyNumPts = 20; %end of adaptation
-transientNumPts = 3; % OG and Washout
+transientNumPts = 5; % OG and Washout
 
 if nargin<3 || isempty(groups)
     groups=fields(SMatrix);          
@@ -21,8 +21,8 @@ ngroups=length(groups);
 % results.OGbase.sd=[];
 results.TMsteady1.avg=[];
 results.TMsteady1.sd=[];
-results.catch.avg=[];
-results.catch.sd=[];
+results.Learning.avg=[];
+results.Learning.sd=[];
 results.TMsteady2.avg=[];
 results.TMsteady2.sd=[];
 results.OGafter.avg=[];
@@ -168,16 +168,16 @@ for g=1:ngroups
     
     %calculate relative after-effects
 %     
-    transfer=[transfer; 100*bsxfun(@rdivide,ogafter,tmcatch(:,1))];
-    washout=[washout; 100*bsxfun(@rdivide,tmafter,tmcatch(:,1))];
+    transfer=[transfer; 100*bsxfun(@rdivide,ogafter,tmcatch(:,4))];
+    washout=[washout; 100*bsxfun(@rdivide,tmafter,tmcatch(:,4))];
 
     
 %     transfer=[transfer; 100*(ogafter./tmcatch)];
 %     washout=[washout; 100*(tmafter./tmcatch)];
 
 
-    transfer2=[transfer2; 100*bsxfun(@rdivide,ogafter,tmsteady2(:,1))];
-    washout2=[washout2; 100*bsxfun(@rdivide,tmafter,tmsteady2(:,1))];
+    transfer2=[transfer2; 100*bsxfun(@rdivide,ogafter,tmsteady2(:,4))];
+    washout2=[washout2; 100*bsxfun(@rdivide,tmafter,tmsteady2(:,4))];
     
 %     transfer2=[transfer2; 100*(ogafter./tmsteady2)];
 %     washout2=[washout2; 100*(tmafter./tmsteady2)];
@@ -196,9 +196,9 @@ for g=1:ngroups
     results.TMsteady1.sd(end+1,:)=nanstd(tmsteady1,1)./sqrt(nSubs);
     results.TMsteady1.indiv.(groups{g})=tmsteady1;
     
-    results.catch.avg(end+1,:)=nanmean(tmcatch,1);
-    results.catch.sd(end+1,:)=nanstd(tmcatch,1)./sqrt(nSubs);
-    results.catch.indiv.(groups{g})=tmcatch;
+    results.Learning.avg(end+1,:)=nanmean(tmcatch,1);
+    results.Learning.sd(end+1,:)=nanstd(tmcatch,1)./sqrt(nSubs);
+    results.Learning.indiv.(groups{g})=tmcatch;
     
     results.TMsteady2.avg(end+1,:)=nanmean(tmsteady2,1);
     results.TMsteady2.sd(end+1,:)=nanstd(tmsteady2,1)./sqrt(nSubs);
@@ -234,12 +234,12 @@ if nargin>4 && ~isempty(plotFlag)
     epochs=fields(results);
 
     %plot first five epochs
-    numPlots=4*length(params); 
-    ah=optimizedSubPlot(numPlots,length(params),4,'ltr');
+    numPlots=2*length(params); 
+    ah=optimizedSubPlot(numPlots,length(params),2,'ltr');
     i=1;
     for p=1:length(params)
         limy=[];
-        for t=2:5    
+        for t=1:2:3    
             axes(ah(i))
             hold on        
             for b=1:ngroups
