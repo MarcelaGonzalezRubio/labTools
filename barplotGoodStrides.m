@@ -1,35 +1,38 @@
 function barplotGoodStrides
-load('Syncronization.mat')
-
-BLeftGoodSteps=0;
-for i=1:1:length(GoodL)   
-if GoodL(i,1)==1
-BLeftGoodSteps=BLeftGoodSteps+1;
-else
-BLeftGoodSteps=BLeftGoodSteps;  
-end 
-end
-
-BRigthGoodSteps=0;
-for i=1:1:length(GoodR)   
-if GoodR(i,1)==1
-BRigthGoodSteps=BRigthGoodSteps+1;
-else
-BRigthGoodSteps=BRigthGoodSteps;
-end 
-end
-
-
-BLeft=GoodL(:,1);
-BLeft(find(isnan(BLeft)))=[];
-BlegthLeft=length(BLeft);
-
-BRigth=GoodR(:,1);
-BRigth(find(isnan(BRigth)))=[];
-BlegthRigth=length(BRigth);
-
-L(1,1)=BLeftGoodSteps/BlegthLeft;
-R(1,1)=BRigthGoodSteps/BlegthRigth;
+load('PDT06Pyton2.mat')
+load('PDT06info.mat')
+% load('PST09Pyton2.mat')
+% load('PST09info.mat')
+Subject=info.ID
+% BLeftGoodSteps=0;
+% for i=1:1:length(GoodL)   
+% if GoodL(i,1)==1
+% BLeftGoodSteps=BLeftGoodSteps+1;
+% else
+% BLeftGoodSteps=BLeftGoodSteps;  
+% end 
+% end
+% 
+% BRigthGoodSteps=0;
+% for i=1:1:length(GoodR)   
+% if GoodR(i,1)==1
+% BRigthGoodSteps=BRigthGoodSteps+1;
+% else
+% BRigthGoodSteps=BRigthGoodSteps;
+% end 
+% end
+% 
+% 
+% BLeft=GoodL(:,1);
+% BLeft(find(isnan(BLeft)))=[];
+% BlegthLeft=length(BLeft);
+% 
+% BRigth=GoodR(:,1);
+% BRigth(find(isnan(BRigth)))=[];
+% BlegthRigth=length(BRigth);
+% 
+% L(1,1)=BLeftGoodSteps/BlegthLeft;
+% R(1,1)=BRigthGoodSteps/BlegthRigth;
 
 % ALeftGoodSteps=0;
 % ARigthGoodSteps=0;
@@ -116,16 +119,41 @@ R(1,1)=BRigthGoodSteps/BlegthRigth;
 % L(2,1)=RLeftGoodSteps/RlegthLeft;
 % R(2,1)=RRigthGoodSteps/RlegthRigth;
 
-figure()
+Rnexus=sum(GoodnexusR==1)/length(GoodnexusR);
+Lnexus=sum(GoodnexusL==1)/length(GoodnexusL);
+Rpython=sum(GoodRHS==1)/length(GoodRHS);
+Lpython=sum(GoodLHS==1)/length(GoodLHS);
+a=(Rnexus-Rpython)*100
+b=(Lnexus-Lpython)*100
 
-for i=1:1:1
-hold on
-bar((1:1)+(.5+.5.*i),R(i,1),0.2,'FaceColor',[.8,.8,.8])
-bar((1:1)+(.7+.5*i),L(i,1),0.2,'FaceColor',[.0,.36,.6])
-end
-condition={'Gradual Adaptation','Re-adaptation'};
-xTickPos=2.1:.5:2*length(condition);
-set(gca,'XTick',xTickPos,'XTickLabel',condition)
-legend( 'Fast Leg','Slow Leg')
-title(['Good Steps' '(',Subject ')'])
+errorR=(sum(GoodRHS==1)-sum(GoodnexusR==1))/sum(GoodnexusR==1)
+errorL=(sum(GoodLHS==1)-sum(GoodnexusL==1))/sum(GoodnexusL==1)
+
+%figure()
+% for i=1:1
+% hold on
+% bar((1:1)+(.5+.5.*i),Rnexus,0.2,'FaceColor',[.8,.8,.8])
+% bar((1:1)+(.7+.5*i),Lnexus,0.2,'FaceColor',[.0,.36,.6])
+% end
+% condition={'Gradual Adaptation' ,'Gradual Adaptation'};
+% axis([1.8 2.5 0 1])
+% xTickPos=2.1:.5:2*length(condition);
+% set(gca,'XTick',xTickPos,'XTickLabel',condition)
+% 
+% legend('Fast Leg' ,'Slow Leg')
+% title(['Good Steps' '(',Subject ') nexus'])
+% figure()
+% 
+% for i=1:1:1
+% hold on
+% bar((1:1)+(.5+.5.*i),Rpython(i,1),0.2,'FaceColor',[.8,.8,.8])
+% bar((1:1)+(.7+.5*i),Lpython(i,1),0.2,'FaceColor',[.0,.36,.6])
+% end
+% condition={'Gradual Adaptation','Re-adaptation'};
+% legend( 'Fast Leg','Slow Leg')
+% title(['Good Steps' '(',Subject ') python'])
+% axis([1.8 2.5 0 1])
+% xTickPos=2.1:.5:2*length(condition);
+% set(gca,'XTick',xTickPos,'XTickLabel',condition)
+
 end
