@@ -578,7 +578,7 @@ classdef adaptationData
         end
         
         %function [avg, indiv]=plotAvgTimeCourse(adaptDataList,params,conditions,binwidth,indivFlag,indivSubs)
-        function figHandle=plotAvgTimeCourse(adaptDataList,params,conditions,binwidth,indivFlag,indivSubs)
+        function [indiv,se,avg,figHandle]=plotAvgTimeCourse(adaptDataList,params,conditions,binwidth,indivFlag,indivSubs,biofeedback)
 		
         %adaptDataList must be cell array of 'param.mat' file names
         %params is cell array of parameters to plot. List with commas to
@@ -700,7 +700,7 @@ classdef adaptationData
 %                       end
 
                     %to plot the max number of pts in each condition:
-                    [maxPts,loc]=nanmax(numPts.(cond{c})); %Note: a colliding version had nanmin here instead of nanmax. I believe this is the correct form.
+                    [maxPts,loc]=nanmin(numPts.(cond{c})); %Note: a colliding version had nanmin here instead of nanmax. I believe this is the correct form.
                     while maxPts>1.25*nanmax(numPts.(cond{c})([1:loc-1 loc+1:end]))
                         numPts.(cond{c})(loc)=nanmean(numPts.(cond{c})([1:loc-1 loc+1:end])); %do not include min in mean
                         [maxPts,loc]=nanmax(numPts.(cond{c}));
@@ -754,10 +754,27 @@ classdef adaptationData
                         end
                         hold on                       
                         y=avg(group).(params{p}).(cond{c});
-                        E=se(group).(params{p}).(cond{c});                        
+%                         y=avg.(params{p}).(cond{c});
+                        E=se(group).(params{p}).(cond{c});
+%                         E=se.(params{p}).(cond{c});
                         condLength=length(y);
                         x=Xstart:Xstart+condLength-1;
-                        
+%%
+               %DULCE
+                    if nargin>6 &&  ~isempty(biofeedback) 
+                        load(adaptDataList{1})
+                    if biofeedback==1 &&  strcmp(params{p},'alphaFast') 
+                         w=adaptData.getParamInCond('TargetHitR',conditions{c});
+                    elseif biofeedback==1 &&  strcmp(params{p},'alphaSlow')  
+                        w=adaptData.getParamInCond('TargetNexus',conditions{c});
+                    elseif biofeedback==0
+                        biofeedback=[];
+                    else 
+                       w=adaptData.getParamInCond('TargetNexus',conditions{c});
+                       
+                    end
+                    end
+                        %%
                         if nargin>4 && ~isempty(indivFlag) && indivFlag
                             if nargin>5 && ~isempty(indivSubs)
                                 subsToPlot=indivSubs{group};                                
@@ -767,24 +784,25 @@ classdef adaptationData
                             for s=1:length(subsToPlot)
                                 subInd=find(ismember(subjects,subsToPlot{s}));
                                 %to plot as dots
-                                %  Li{group}(s)=plot(x,indiv(group).(params{p}).(cond{c})(subInd,:),'o','MarkerSize',3,'MarkerEdgeColor',ColorOrder(subInd,:),'MarkerFaceColor',ColorOrder(subInd,:));
+                                 Li{group}(s)=plot(x,indiv(group).(params{p}).(cond{c})(subInd,:),'o','MarkerSize',5,'MarkerEdgeColor',ColorOrder(subInd,:),'MarkerFaceColor',ColorOrder(subInd,:));
                                 %to plot as lines
-                                Li{group}(s)=plot(x,indiv(group).(params{p}).(cond{c})(subInd,:),LineOrder{group},'color',ColorOrder(subInd,:));
+%                                 Li{group}(s)=plot(x,indiv(group).(params{p}).(cond{c})(subInd,:),LineOrder{group},'color',ColorOrder(subInd,:),'LineWidth',2);
                                 legendStr{group}=subsToPlot;
                             end
-                            plot(x,y,'o','MarkerSize',3,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',[0.7 0.7 0.7].^group)                            
+                            plot(x,y,'o','MarkerSize',5,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',[0.7 0.7 0.7].^group) 
+%                             plot(x,y,'LineWidth',2,'color',[0.7 0.7 0.7].^group);
                         else
-                            if Ngroups==1 && ~(size(params,1)>1)
+                            if Ngroups==1 && ~(size(params,1)>1) && isempty(biofeedback) 
                                 [Pa, Li{c}]=nanJackKnife(x,y,E,ColorOrder(c,:),ColorOrder(c,:)+0.5.*abs(ColorOrder(c,:)-1),0.7);                                
                                 set(Li{c},'Clipping','off')
                                 H=get(Li{c},'Parent');                                
                                 legendStr={conditions};
-                            elseif size(params,1)>1
+                            elseif size(params,1)>1 && isempty(biofeedback)
                                 [Pa, Li{(group-1)*size(params,1)+p}]=nanJackKnife(x,y,E,ColorOrder(g,:)./Cdiv,ColorOrder(g,:)./Cdiv+0.5.*abs(ColorOrder(g,:)./Cdiv-1),0.7);                                
                                 set(Li{(group-1)*size(params,1)+p},'Clipping','off')
                                 H=get(Li{(group-1)*size(params,1)+p},'Parent');  
                                 legendStr{(group-1)*size(params,1)+p}=legStr;
-                            else
+                            elseif isempty(biofeedback)
                                 [Pa, Li{g}]=nanJackKnife(x,y,E,ColorOrder(g,:)./Cdiv,ColorOrder(g,:)./Cdiv+0.5.*abs(ColorOrder(g,:)./Cdiv-1),0.7);                                
                                 set(Li{g},'Clipping','off')
                                 H=get(Li{g},'Parent'); 
@@ -797,6 +815,15 @@ classdef adaptationData
                                legendStr{g}={['group ' abrevGroup]};								
                                %legendStr{g}={['group' num2str(g)]};
                             end
+                        %%
+                            %DULCE
+                            if Ngroups==1 && ~(size(params,1)>1) && ~isempty(biofeedback)
+                                [Pa, Li{c}]=nanJackKnife(x,y,E,ColorOrder(c,:),ColorOrder(c,:)+0.5.*abs(ColorOrder(c,:)-1),0.7,w);                                
+                                set(Li{c},'Clipping','off')
+                                H=get(Li{c},'Parent');                                
+                                legendStr={conditions};
+                            end
+                            %%
                             set(Pa,'Clipping','off')
                             set(H,'Layer','top')
                         end                        

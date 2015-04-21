@@ -413,7 +413,60 @@ switch expDescrip
         end
         for t=[2:5 7]
             set(handles.(['type' num2str(t)]),'string','TM')
-        end     
+        end    
+                
+    case {'Abrupt Biofeedback'}
+        %condition numbers
+        i=1;
+        for cond = [1:10]
+            set(handles.(['condition' num2str(i)]),'string',num2str(cond))
+            i=i+1;
+        end        
+        set(handles.numofconds,'string','10')    
+        
+        %condition names
+        set(handles.condName1,'string','OG base')        
+        set(handles.condName2,'string','TM Slow base')        
+        set(handles.condName3,'string','TM Fast base')
+        set(handles.condName4,'string','TM medium base')
+        set(handles.condName5,'string','TM medium W/Bio')
+        set(handles.condName6,'string','Abrupt adaptation')
+        set(handles.condName7,'string','catch')
+        set(handles.condName8,'string','re-adaptation')
+        set(handles.condName9,'string','OG post')
+        set(handles.condName10,'string','Washout')
+
+        %condition descriptions
+        set(handles.description1,'string','10m walk for 10 min')        
+        set(handles.description2,'string','50 strides 0.5m/s')        
+        set(handles.description3,'string','50 strides 1.5m/s')
+        set(handles.description4,'string','150 strides 1 m/s')
+        set(handles.description5,'string','150 strides 1m/s')
+        set(handles.description6,'string','450 strides 3:1 1.5-0.5 m/s')
+        set(handles.description7,'string','10 strides 1m/s')
+        set(handles.description8,'string','150 strides 3:1 1.5-0.5m/s')
+        set(handles.description9,'string','10m walk for 10 min')
+        set(handles.description10,'string','450 strides 1m/s')
+        
+        %trial numbers for each condition
+        set(handles.trialnum1,'string','1:5')
+        set(handles.trialnum2,'string','6')
+        set(handles.trialnum3,'string','7')
+        set(handles.trialnum4,'string','8:9')
+        set(handles.trialnum5,'string','10')
+        set(handles.trialnum6,'string','11')
+        set(handles.trialnum7,'string','12')
+        set(handles.trialnum8,'string','13')
+        set(handles.trialnum9,'string','14:18')
+        set(handles.trialnum10,'string','19')
+        
+        %set trial types
+        for t=[1 9]
+            set(handles.(['type' num2str(t)]),'string','OG')
+        end
+        for t=[2:8 10]
+            set(handles.(['type' num2str(t)]),'string','TM')
+        end    
         
 end
 

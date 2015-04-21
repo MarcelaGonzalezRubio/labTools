@@ -114,9 +114,14 @@ paramlabels = {'good',...       Flag indicating whether the stride has events in
     'centerSlow',...           alphaAngSlow(t)+betaAngSlow(t))/2;
     'centerFast',...           alphaAngFast(t)+betaAngFast(t))/2;
     'indSHSD',...
+    'indSHS2D',...
     'indFHSD',...
-    'timeSHSD',...
-    'timeFHSD',...
+    'indFTOD',...
+    'indSTOD',...
+    'indFTO2D',...
+    'timeSHSD',...              timeSHS;
+    'timeSHSD2',...             timeSHS2;
+    'timeFHSD',...              timeFHS;
     }; 
 
 %make the time series have a time vector as small as possible so that
@@ -297,11 +302,15 @@ for step=1:Nstrides
             indSHS=round(indSHS*CF);
             indSHSD(t)=indSHS;
             indFTO=round(indFTO*CF);
+            indFTOD(t)=indFTO;
             indFHS=round(indFHS*CF);
             indFHSD(t)=indFHS;
             indSTO=round(indSTO*CF);
+            indSTOD(t)=indSTO;
             indSHS2=round(indSHS2*CF);
+            indSHS2D(t)= indSHS2;
             indFTO2=round(indFTO2*CF);
+            indFTO2D(t)=indFTO2;
             
             %Compute times with new indices:
             timeSHS=eventsTime(indSHS*(1/CF));
@@ -311,6 +320,7 @@ for step=1:Nstrides
             timeFHSD(t)=timeFHS;
             timeSTO=eventsTime(indSTO*(1/CF));
             timeSHS2=eventsTime(indSHS2*(1/CF));
+            timeSHS2D(t)=timeSHS2;
             timeFTO2=eventsTime(indFTO2*(1/CF));
             
             %find walking direction

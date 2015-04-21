@@ -64,8 +64,8 @@ while length(locLHSpyton)~=length(locLindex)
    FrameDiff=locLindex(1:end-diffLength)-locLHSpyton;
    IsBad=find(FrameDiff<=-10);
    if isempty(IsBad)
-       stop
-       display('Something is WRONG!')
+              display('Something is WRONG!')
+              break
    else
        locLindex(IsBad(1))=[];
    end
@@ -105,7 +105,7 @@ Ltarget=newData2(locLindex,19)*1000;
 end
 % LHip=newData2(locRindex,13)*1000;
 % LAnk=newData2(locLindex,15)*1000;
-% hola=labTimeSeries(newData2,0,0.01,{'FrameNumber','Rfz','Lfz','RHS','LHS','RGORB','LGORB','Ralpha','Lalpha','Rscale','Lscale','RHIPY','LHIPY','RANKY','LANKY','targetR','targetL'});
+%  PythonData=labTimeSeries(newData2,0,0.01,{'FrameNumber','Rfz','Lfz','RHS','LHS','RTO','LTO','RGORB','LGORB','Ralpha','Lalpha','Rscale','Lscale','RHIPY','LHIPY','RANKY','LANKY','targetR','targetL'});
 %%
 %plot of the alpha values. Tolerance indicade 
 ystdRU=25*ones([length(GoodRHS),1])+Rtarget;

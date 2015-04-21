@@ -1,4 +1,4 @@
-function results=SyncPython(subject,typeBiofeedback)
+% function results=SyncPython(subject,typeBiofeedback)
 %typeBiofeedback dymamics=1, Statics=0.
 subject='PST09';
 typeBiofeedback=0;
@@ -151,11 +151,13 @@ results.GoodLHS=[];
         %Finding HS from Nexus at 100HZ and Interpolated Pyton data, interpolate
         %data is used to make sure that we dont take in consideration extras HS.
 %         [LHSnexus,RHSnexus]= getEventsFromForces(NexusLlowFreq,NexusRlowFreq,120);
-        [LHSpyton,RHSpyton]= getEventsFromForces(newData(:,3),newData(:,2),120);
+        [LHSpyton,RHSpyton,LTOpyton,RTOpython]= getEventsFromForces(newData(:,3),newData(:,2),120);
         
         if expData.data{j}.metaData.refLeg == 'L'
             locLHSnexus=adaptData.getParamInCond({'indSHSD'},{'Gradual adaptation'});
             locRHSnexus=adaptData.getParamInCond({'indFHSD'},{'Gradual adaptation'});
+            locRTOnexus=adaptData.getParamInCond({'indSTOD'},{'Gradual adaptation'});
+            locLTOnexus=adaptData.getParamInCond({'indFTOD'},{'Gradual adaptation'});
         elseif expData.data{j}.metaData.refLeg == 'R'
             locLHSnexus=adaptData.getParamInCond({'indFHSD'},{'Gradual adaptation'});
             locRHSnexus=adaptData.getParamInCond({'indSHSD'},{'Gradual adaptation'});
@@ -290,7 +292,6 @@ results.GoodLHS=[];
         locLindex=locLindex(1:length(GoodEvents),1);
         GoodRHS=newData2(locRindex,8);
         GoodLHS=newData2(locLindex,9);
-       
         results.locLindex=[results.locLindex;locLindex];
         results.locRindex=[results.locRindex;locRindex];
         results.GoodRHS=[results.GoodRHS;GoodRHS];
@@ -304,9 +305,12 @@ results.GoodLHS=[];
         alphaR_time(locRindex,1)=newData2(locRindex,10)*1000;
         alphaL_time(locLindex,1)=newData2(locLindex,11)*1000;
         %alpha values at HS
-        alphaRPyton=newData(locRindex,10)*1000;
-        alphaLPyton=newData(locLindex,11)*1000;
-      
+        alphaRPyton=newData2(locRindex,10)*1000;
+        alphaLPyton=newData2(locLindex,11)*1000;
+%         betaRpyton=newData2(locRindexTO,10)*1000;
+%         betaLpyton=newData2(locLindexTO,11)*1000;
+%         XRpyton=newData2(locRindex,11)*1000;
+%         LRpyton=newData2(locLindex,10)*1000;
         results.alphaRPyton=[results.alphaRPyton;alphaRPyton];
         results.alphaLPyton=[results.alphaLPyton;alphaLPyton];
         %
@@ -324,6 +328,8 @@ results.GoodLHS=[];
             Ltarget=newData(locLindex,19)*1000;
            
         end
+        
+     
        %% 
 %Comprobando si los pasos fueron clasificados de la manera correcta
  if typeBiofeedback==1 
@@ -381,9 +387,11 @@ results.GoodLHS=[];
          end
      end
  end
+ 
  %%
 alphaRnexus=adaptData.getParamInCond({'alphaFast'},condition{p});
 alphaLnexus=adaptData.getParamInCond({'alphaTemp'},condition{p});
+
 %plot of the alpha values. Tolerance indicade 
 ystdRU=25*ones([length(GoodRHS),1])+Rtarget;
 ystdRL=-25*ones([length(GoodRHS),1])+Rtarget;
