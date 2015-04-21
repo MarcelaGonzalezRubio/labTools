@@ -162,7 +162,7 @@ hold on;
 if size(varargin,2)<7
     Pa = patch(Xcoords,Ycoords,PatchColor);
     set(Pa,'linestyle','-','linewidth',1,'EdgeColor',LineColor,'FaceAlpha',Opacity);
-    Li = plot(x,y,'o','MarkerSize',5,'LineWidth',1,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',LineColor);
+    Li = plot(x,y,'o','MarkerSize',8,'LineWidth',1,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',LineColor);
 elseif size(varargin,2)==7
 %     Pa = patch(Xcoords,Ycoords,'w');
 Pa=[];
