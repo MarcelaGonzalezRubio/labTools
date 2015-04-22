@@ -1,7 +1,7 @@
 
-cd('/Users/carlysombric/Desktop/NewOGProcessing/newMethod/ paramFiles')
+% cd('/Users/carlysombric/Desktop/NewOGProcessing/newMethod/ paramFiles')
 Smatrix=makeSMatrix;
-subs=[{subFileList(Smatrix.OA)} {subFileList(Smatrix.OASV)} {subFileList(Smatrix.YA)} {subFileList(Smatrix.YASV)}];
+subs=[{subFileList(Smatrix.LN)}];% {subFileList(Smatrix.OASV)} {subFileList(Smatrix.YA)} {subFileList(Smatrix.YASV)}];
 %subs=[{'OG11params.mat'} {'OG211params.mat'}]
 params=[{'spatialContribution'} {'stepTimeContribution'} {'velocityContribution'} {'netContribution'}];
 
@@ -13,7 +13,7 @@ params=[{'spatialContribution'} {'stepTimeContribution'} {'velocityContribution'
 %conds=[{'TM base'} {'TM post'}];
 %conds=[{'OG base'} {'OG post'}];
  %conds=[{'adaptation'}];
-conds=[{'adaptation'} {'re-adaptation'}];
+conds={'adaptation'};% {'re-adaptation'}]
 %conds=[{'re-adaptation'}];
 
 
@@ -24,11 +24,11 @@ conds=[{'adaptation'} {'re-adaptation'}];
 %adaptationData.plotAvgTimeCourse(subs,params,conds,5, 1)% How to plot
 %indicvidual subjects
 
- A=barGroupsFirstSteps(Smatrix, params, {'OA','OASV', 'YA', 'YASV'}); %this is how the bar plots are made
+ A=barGroupsFirstSteps(Smatrix, params, {'LN'}); %this is how the bar plots are made
  %close all
 
 % Whole + Adaptation + Readaptation
-close conds=[{'adaptation'} {'re-adaptation'}];
+% close conds=[{'adaptation'} {'adaptation'}];
  AvgTimeCourse_Whole(subs,params,conds,A) %This is the function that I use to do the rate calculations
 
 % Cropped + Adaptation + Readaptation
