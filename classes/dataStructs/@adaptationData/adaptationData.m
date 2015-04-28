@@ -812,8 +812,9 @@ classdef adaptationData
                                 abrevGroup=group2(spaces+1);
                                 group2=group2(ismember(group2,['A':'Z' 'a':'z']));
                                 abrevGroup=[group2];
-                               legendStr{g}={['group ' abrevGroup]};								
-                               %legendStr{g}={['group' num2str(g)]};
+                               legendStr{g}={['group ' abrevGroup]};
+% legendStr{1}={'PST13'};
+% legendStr{2}={'PST14'};                              %legendStr{g}={['group' num2str(g)]};
                             end
                         %%
                             %DULCE
