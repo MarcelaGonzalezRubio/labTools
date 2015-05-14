@@ -114,7 +114,9 @@ paramlabels = {'good',...       Flag indicating whether the stride has events in
     'timeSHSD',...              timeSHS;
     'timeSHSD2',...             timeSHS2;
     'timeFHSD',...              timeFHS;
-    }; 
+    'spatialErrorS',...         spatialIdealS(t)-spatialContributionNorm2(t)
+     'stepTimeErrorS',...       stepTimeIdealS(t)-stepTimeContributionNorm2(t);
+      }; 
 
 %make the time series have a time vector as small as possible so that
 % a) it does not take up an unreasonable amount of space
@@ -540,6 +542,15 @@ for step=1:Nstrides
             stepTimeContributionNorm2(t)=stepTimeContribution(t)/(stepLengthFast(t)+stepLengthSlow(t));
             velocityContributionNorm2(t)=velocityContribution(t)/(stepLengthFast(t)+stepLengthSlow(t));
             netContributionNorm2(t)=netContribution(t)/(stepLengthFast(t)+stepLengthSlow(t));
+            
+            %From S goal
+            Dist(t)=stepLengthFast(t)+stepLengthSlow(t);
+            rangeSlow(t)=alphaSlow(t)-betaSlow(t);
+            rangeFast(t)=alphaFast(t)-betaFast(t);
+            spatialIdealS(t)=(2*(alphaFast(t)+alphaSlow(t))./Dist(t)).*((rangeFast(t)-rangeSlow(t))./(rangeFast(t)+rangeSlow(t)));
+            stepTimeIdealS(t)=(-velocityContributionNorm2(t))-spatialIdealS(t);
+            spatialErrorS(t)=spatialIdealS(t)-spatialContributionNorm2(t);
+            stepTimeErrorS(t)=stepTimeIdealS(t)-stepTimeContributionNorm2(t);
             
             
         end
