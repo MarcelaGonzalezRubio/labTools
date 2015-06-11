@@ -6,9 +6,9 @@ poster_colors;
 GreyOrder=[0 0 0 ;1 1 1;0.5 0.5 0.5;0.2 0.2 0.2;0.9 0.9 0.9;0.1 0.1 0.1;0.8 0.8 0.8;0.3 0.3 0.3;0.7 0.7 0.7];
 ColorOrder=[p_red; p_orange; p_fade_green; p_fade_blue; p_plum; p_green; p_blue; p_fade_red; p_lime; p_yellow; p_gray; p_black;p_red];
 
-catchNumPts = 3; % catch
-steadyNumPts = 40; %end of adaptation
-transientNumPts =5; % OG and Washout
+catchNumPts = 5; % catch
+steadyNumPts = 20; %end of adaptation
+transientNumPts = 5; % OG and Washout
 
 if nargin<3 || isempty(groups)
     groups=fields(SMatrix);          
@@ -150,18 +150,15 @@ for g=1:ngroups
             ogafter=[ogafter; nanmean(transferData(1:transientNumPts,:))];
             
             %calculate TM after-effects
-%             tmafterData=adaptData.getParamInCond(params,'Washout');
-             tmafterData=adaptData.getParamInCond(params,'TM post');
+            tmafterData=adaptData.getParamInCond(params,'TM post');
             tmafter=[tmafter; nanmean(tmafterData(1:transientNumPts,:))];            
         end
         
 
         
         %calculate TM steady state #1
-%         tmsteady1Data=adaptData.getParamInCond(params,'Abrupt adaptation');
         tmsteady1Data=adaptData.getParamInCond(params,'Gradual adaptation');
-        tmsteady1=[tmsteady1;nanmean(tmsteady1Data((end-5)-steadyNumPts+1:(end-5),:))];
-%         tmsteady1=[tmsteady1;nanmean(tmsteady1Data)];   
+        tmsteady1=[tmsteady1;nanmean(tmsteady1Data((end-5)-steadyNumPts+1:(end-5),:))];             
         
         %calculate TM steady state #2
         tmsteady2Data=adaptData.getParamInCond(params,'Re-adaptation');
@@ -237,12 +234,12 @@ if nargin>4 && ~isempty(plotFlag)
     epochs=fields(results);
 
     %plot first five epochs
-    numPlots=5*length(params); 
-    ah=optimizedSubPlot(numPlots,length(params),5,'ltr');
+    numPlots=2*length(params); 
+    ah=optimizedSubPlot(numPlots,length(params),2,'ltr');
     i=1;
     for p=1:length(params)
         limy=[];
-        for t=1:5    
+        for t=1:2:3    
             axes(ah(i))
             hold on        
             for b=1:ngroups
@@ -270,12 +267,12 @@ if nargin>4 && ~isempty(plotFlag)
 
 
     %plot last four epochs
-    numPlots=4*length(params);
-    ah=optimizedSubPlot(numPlots,length(params),4,'ltr');
+    numPlots=2*length(params);
+    ah=optimizedSubPlot(numPlots,length(params),2,'ltr');
     i=1;
     for p=1:length(params)
         %limy=[];
-        for t=6:9
+        for t=6:7
             axes(ah(i))
             hold on        
             for b=1:ngroups

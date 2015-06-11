@@ -11,13 +11,13 @@ function [SmoothedData]=AvgTimeCourse_Whole(adaptDataList,params,conditions, A)
 %a subset of those in the adaptDataList. Plots specific subjects
 %instead of all subjects.
 
-allValues=cell(3, 4);
-allValuesC=cell(3, 4);
-allValuesALL=cell(3, 4);
-Stride2SS=cell(3,4);
-whereIS=cell(3,4);
+allValues=cell(4, 4);
+allValuesC=cell(4, 4);
+allValuesALL=cell(4, 4);
+Stride2SS=cell(4,4);
+whereIS=cell(4,4);
 ToAICAnalysis=[];
-Divider=cell(3, 4);
+Divider=cell(4, 4);
 %First: see if adaptDataList is a single subject (char), a cell
 %array of subject names (one group of subjects), or a cell array of cell arrays of
 %subjects names (several groups of subjects), and put all the
@@ -73,16 +73,16 @@ for group=1:Ngroups
         load(auxList{group}{subject});
         
         %normalize contributions based on combined step lengths
-        SLf=adaptData.data.getParameter('stepLengthFast');
-        SLs=adaptData.data.getParameter('stepLengthSlow');
-        Dist=SLf+SLs;
+%         SLf=adaptData.data.getParameter('stepLengthFast');
+%         SLs=adaptData.data.getParameter('stepLengthSlow');
+%         Dist=SLf+SLs;
         contLabels={'spatialContributionNorm2','stepTimeContributionNorm2','velocityContributionNorm2','netContributionNorm2'};
-        [~,dataCols]=isaParameter(adaptData.data,contLabels);
-        %         for c=1:length(contLabels)
-        %             contData=adaptData.data.getParameter(contLabels(c));
-        %             contData=contData./Dist;
-        %             adaptData.data.Data(:,dataCols(c))=contData;
-        %         end
+%         [~,dataCols]=isaParameter(adaptData.data,contLabels);
+%         for c=1:length(contLabels)
+%             contData=adaptData.data.getParameter(contLabels(c));
+%             contData=contData./Dist;
+%             adaptData.data.Data(:,dataCols(c))=contData;
+%         end
         
         %EDIT: create contribution error values
         vels=adaptData.data.getParameter('stanceSpeedSlow');
@@ -101,55 +101,42 @@ for group=1:Ngroups
         
         for c=1:nConds
             %                         if false
-            if strcmpi(conditions{c},'Abrupt adaptation')  || strcmpi(conditions{c},'Re-adaptation')|| strcmpi(conditions{c},'Gradual adaptation')
+            if strcmpi(conditions{c},'adaptation')  || strcmpi(conditions{c},'TM post') || strcmpi(conditions{c},'re-adaptation')
                 
-                if strcmpi(conditions{c},'Abrupt adaptation')
-                    %                 if strcmpi(conditions{c},'Gradual adaptation')
-                    x=6;
-                    %                     x=3;
-                elseif strcmpi(conditions{c},'Washout')
-                    %                 elseif strcmpi(conditions{c},'TM post')
-                    x=10;
-                    %                     x=7;
-                elseif  strcmpi(conditions{c},'re-adaptation')
-                    x=8;
-                    %                     x=5;
+                conditionIdxs=getConditionIdxsFromName(adaptData,{conditions{c}});
+                dataPts=adaptData.getParamInCond(params,adaptData.metaData.conditionName{conditionIdxs});
+                nPoints=size(dataPts,1);
+                
+                %cond{c}=adaptData.metaData.conditionName{conditionIdxs};
+                if nPoints == 0
+                    numPts.(cond{c})(s)=NaN;
+                else
+                    numPts.(cond{c})(s)=nPoints;
                 end
-                trials=adaptData.metaData.trialsInCondition(x);
-                trials=trials{:};
-                for t=1:length(trials)
-                    dataPts=adaptData.getParamInTrial(params,trials(t));
-                    nPoints=size(dataPts,1);
-                    if nPoints == 0
-                        numPts.(cond{c}).(['trial' num2str(t)])(s)=NaN;
+                for p=1:length(params)
+                    %itialize so there are no inconsistant dimensions or out of bounds errors
+                    values(group).(params{p}).(cond{c})(subject,:)=NaN(1,2000); %this assumes that the max number of data points that could exist in a single condition is 2000
+                    if strcmp(params{p},'velocityContribution') %FIXME: This is not recommended, we are taking abs() of the velocity Contribution without saying anything. Furthermore, what happens when velContrib ~ 0 ?
+                        values(group).(params{p}).(cond{c})(subject,1:nPoints)=abs(dataPts(:,p));
                     else
-                        numPts.(cond{c}).(['trial' num2str(t)])(s)=nPoints;
-                    end
-                    for p=1:length(params)
-                        %itialize so there are no inconsistant dimensions or out of bounds errors
-                        values(group).(params{p}).(cond{c}).(['trial' num2str(t)])(subject,:)=NaN(1,2000); %this assumes that the max number of data points that could exist in a single condition is 1000
-                        values(group).(params{p}).(cond{c}).(['trial' num2str(t)])(subject,1:nPoints)=dataPts(:,p);
+                        values(group).(params{p}).(cond{c})(subject,1:nPoints)=dataPts(:,p);
                     end
                 end
-                if min(numPts.(cond{c}).(['trial' num2str(t)]))==0
-                    bad=find(numPts.(cond{c}).(['trial' num2str(t)])==0);
-                    numPts.(cond{c}).(['trial' num2str(t)])=[];
-                end
-                %~~~~~~~~~~~~
             end
+            %~~~~~~~~~~~~
         end
-        s=s+1;
     end
+    s=s+1;
 end
+
 
 for group=1:Ngroups
     Xstart=1;
     lineX=0;
     subjects=auxList{group};
-%     for c=1:length(conditions)
-    if  strcmpi(conditions{c},'Abrupt adaptation')  || strcmpi(conditions{c},'re-adaptation')|| strcmpi(conditions{c},'Gradual adaptation')
-        %             trials=[adaptData.metaData.trialsInCondition(6) adaptData.metaData.trialsInCondition(8)];
-        trials=[adaptData.metaData.trialsInCondition(3) adaptData.metaData.trialsInCondition(5)];
+    %for c=1:length(conditions)
+    if strcmpi(conditions{c},'adaptation') || strcmpi(conditions{c},'re-adaptation') || strcmpi(conditions{c},'TM post')
+        %             trials=[adaptData.getTrialsInCond(conditions{1}) adaptData.getTrialsInCond(conditions{2})];
         %for t=1:length(trials)
         %                 % Min PTS
         %                 [maxPts,loc]=nanmin(numPts.(cond{c}).(['trial' num2str(t)]));
@@ -159,10 +146,10 @@ for group=1:Ngroups
         %                 end
         
         %% Max PTS
-        [maxPts(t),loc]=nanmax(numPts.(cond{c}).(['trial' num2str(t)]));
-        while maxPts>1.25*nanmax(numPts.(cond{c}).(['trial' num2str(t)])([1:loc-1 loc+1:end]))
-            numPts.(cond{c}).(['trial' num2str(t)])(loc)=nanmean(numPts.(cond{c}).(['trial' num2str(t)])([1:loc-1 loc+1:end])); %do not include min in mean
-            [maxPts(t),loc]=nanmax(numPts.(cond{c}).(['trial' num2str(t)]));
+        [maxPts,loc]=nanmin(numPts.(cond{c})); %Note: a colliding version had nanmin here instead of nanmax. I believe this is the correct form.
+        while maxPts>1.25*nanmax(numPts.(cond{c})([1:loc-1 loc+1:end]))
+            numPts.(cond{c})(loc)=nanmean(numPts.(cond{c})([1:loc-1 loc+1:end])); %do not include min in mean
+            [maxPts,loc]=nanmax(numPts.(cond{c}));
         end
         
         if maxPts==0
@@ -192,53 +179,39 @@ for group=1:Ngroups
             %This is to get the all of adaptation for each subject
             maxPts=sum(maxPts);
             t=1;
-            for person=1:size(values(group).(params{p}).(cond{c}).(['trial' num2str(t)])(:,end-maxPts:end),1)
-                %                     
-                ender1=find(isnan(values(group).(params{p}).(cond{1}).(['trial' num2str(1)])(person,:))==0, 1, 'last');
-%                 if group==2 && person==7 || group==3 && person==1 || group==3 && person==2 || group==3 && person==3 || group==3 && person==4 || group==3 && person==5
-%                 ender2=find(isnan(values(group).(params{p}).(cond{1}).(['trial' num2str(2)])(person,:))==0, 1, 'last');
-%                 ender3=find(isnan(values(group).(params{p}).(cond{1}).(['trial' num2str(3)])(person,:))==0, 1, 'last');
-%                 
+            for person=1:size(values(group).(params{p}).(cond{c})(subject,1:nPoints),1)
+                ender1=find(isnan(values(group).(params{p}).(cond{c})(subject,1:nPoints)));
+                ender2=find(isnan(values(group).(params{p}).(cond{1}).(['trial' num2str(2)])(person,:))==0, 1, 'last');
+                ender3=find(isnan(values(group).(params{p}).(cond{1}).(['trial' num2str(3)])(person,:))==0, 1, 'last');
+                ender4=find(isnan(values(group).(params{p}).(cond{1}).(['trial' num2str(4)])(person,:))==0, 1, 'last');
 %                 ender5=find(isnan(values(group).(params{p}).(cond{2}).(['trial' num2str(1)])(person,:))==0, 1, 'last');
-%                 
-%                  allValues{group, p}= [allValues{group, p}(:,:); values(group).(params{p}).(cond{1}).(['trial' num2str(1)])(person,1:ender1) ...
-%                      values(group).(params{p}).(cond{1}).(['trial' num2str(2)])(person,1:ender2)...
-%                      values(group).(params{p}).(cond{1}).(['trial' num2str(3)])(person,1:ender3)...
-%                     nan(1, 1500-ender1-ender2-ender3)];
-%                 jj=ender1+ender2+ender3;
-%                 
-%                 Divider{group, p}=[ Divider{group, p}; jj ender5 ];
-%                 
-%                  allValuesALL{group, p}= [allValuesALL{group, p}(:,:); [values(group).(params{p}).(cond{1}).(['trial' num2str(1)])(person,1:ender1) ...
-%                     values(group).(params{p}).(cond{1}).(['trial' num2str(2)])(person,1:ender2)...
-%                     values(group).(params{p}).(cond{1}).(['trial' num2str(3)])(person,1:ender3)...
-%                     values(group).(params{p}).(cond{2}).(['trial' num2str(1)])(person,1:ender5) ...
-%                     nan(1, 1800-ender1-ender2-ender3-ender5)]];
-%                 else 
+%                 ender6=find(isnan(values(group).(params{p}).(cond{2}).(['trial' num2str(2)])(person,:))==0, 1, 'last');
                 
-           
-                ender5=find(isnan(values(group).(params{p}).(cond{2}).(['trial' num2str(1)])(person,:))==0, 1, 'last');
-                %                     ender6=find(isnan(values(group).(params{p}).(cond{2}).(['trial' num2str(2)])(person,:))==0, 1, 'last');
-               
-                   allValues{group, p}= [allValues{group, p}(:,:); values(group).(params{p}).(cond{1}).(['trial' num2str(1)])(person,1:ender1) ...
-                    nan(1, 500-ender1)];
-                %% CJS here is where I am taking the adaptation timecourse to fit
-             
-                Divider{group, p}=[ Divider{group, p}; ender1 ender5 ];
                 
-                %                     allValuesC{group, p}= [allValuesC{group, p}(:,:); values(group).(params{p}).(cond{2}).(['trial' num2str(1)])(person,1:ender5)...
-                % %                         values(group).(params{p}).(cond{2}).(['trial' num2str(2)])(person,1:ender6) ...
-                %                         nan(1, 700-ender5)]; %% CJS here is where I am taking the adaptation timecourse to fit
-            
+                allValues{group, p}= [allValues{group, p}(:,:); [values(group).(params{p}).(cond{1}).(['trial' num2str(1)])(person,1:ender1) ...
+                    values(group).(params{p}).(cond{1}).(['trial' num2str(2)])(person,1:ender2) ...
+                    values(group).(params{p}).(cond{1}).(['trial' num2str(3)])(person,1:ender3) ...
+                    values(group).(params{p}).(cond{1}).(['trial' num2str(4)])(person,1:ender4) ...
+                    nan(1, 700-ender1-ender2-ender3-ender4)]]; %% CJS here is where I am taking the adaptation timecourse to fit
+                Divider{group, p}=[ Divider{group, p}; ender1 ender2 ender3 ender4 ender5 ender6];
+                
+                allValuesC{group, p}=[];% [allValuesC{group, p}(:,:); [values(group).(params{p}).(cond{2}).(['trial' num2str(1)])(person,1:ender5) ...
+%                     values(group).(params{p}).(cond{2}).(['trial' num2str(2)])(person,1:ender6) ...
+%                     nan(1, 700-ender5-ender6)]]; %% CJS here is where I am taking the adaptation timecourse to fit
+                
                 allValuesALL{group, p}= [allValuesALL{group, p}(:,:); [values(group).(params{p}).(cond{1}).(['trial' num2str(1)])(person,1:ender1) ...
-                    values(group).(params{p}).(cond{2}).(['trial' num2str(1)])(person,1:ender5) ...
-                    nan(1, 800-ender1-ender5)]];
-                                                      
-%                 end
+                    values(group).(params{p}).(cond{1}).(['trial' num2str(2)])(person,1:ender2) ...
+                    values(group).(params{p}).(cond{1}).(['trial' num2str(3)])(person,1:ender3) ...
+                    values(group).(params{p}).(cond{1}).(['trial' num2str(4)])(person,1:ender4) ...
+%                     values(group).(params{p}).(cond{2}).(['trial' num2str(1)])(person,1:ender5) ...
+%                     values(group).(params{p}).(cond{2}).(['trial' num2str(2)])(person,1:ender6) ...
+                    nan(1, 950-ender1-ender2-ender3-ender4-ender5-ender6)]];
+                
+                
             end
         end
         %end
-%         end
+        %end
     end
 end
 
@@ -254,32 +227,30 @@ end
 figure
 tea=1;
 milk=1;
-for gr=[1:2]
+for gr=[1:4]
     % Need to visualize to make sure that this is working correctly
     %subplot(2, 2, gr)
     
     for var=[1 2 4]
         
-        for qq=1:size(allValues{gr, var},1)%person
+        for qq=1:size(allValues{gr, var},1)
             
             %Smooth the data:
             %allValuesALL{gr, var}(qq,:)=bin_data_Variable(allValuesALL{gr, var}(qq,:)',3, 20); SmoothType='Whole, BWVar, first not before raw min';%, ';
-            
-            allValuesALL{gr, var}(qq,:)=[bin_dataV1(allValuesALL{gr, var}(qq,:)',20)' nan(1,19)];SmoothType='Whole, BW=20, first not before raw min';
-            
+            allValuesALL{gr, var}(qq,:)=bin_dataV1(allValuesALL{gr, var}(qq,:)',20)'; SmoothType='Whole, BW=20, first not before raw min';
             
             %allValuesALL{gr, var}(qq,:)=bin_dataV1(allValuesALL{gr, var}(qq,:)',5)'; SmoothType='Whole, BW=5, consecutive 15 not before min';
             %allValuesALL{gr, var}(qq,:)=[allValuesALL{gr, var}(qq,:)]; SmoothType='Whole, No Smooth, consecutive 5, not before min';
             
             %Here I am using the final steady state that subjects reached
             if gr==1
-                ss=A.TMsteady2.indiv.CB(qq, var);
+                ss=A.TMsteady2.indiv.OA(qq, var);
             elseif gr==2
-                ss=A.TMsteady2.indiv.SB(qq, var);
-%             elseif gr==3
-%                 ss=A.TMsteady2.indiv.BS(qq, var);
-                %             elseif gr==4
-                %                 ss=A.TMsteady2.indiv.YASV(qq, var);
+                ss=A.TMsteady2.indiv.OASV(qq, var);
+            elseif gr==3
+                ss=A.TMsteady2.indiv.YA(qq, var);
+            elseif gr==4
+                ss=A.TMsteady2.indiv.YASV(qq, var);
             end
             
             % % % %Here I am shifting the SLasym up
@@ -327,12 +298,12 @@ for gr=[1:2]
             
             Stride2SS{gr, var}=[Stride2SS{gr, var} first_t];
             
-            if var==1 %what is going to be plotted
+            if var==4
                 
                 if gr == 1
                     %ToAICAnalysis=[ToAICAnalysis; allValuesALL{gr, var}(qq, :)];
                     figure(1)
-                    subplot(2, 4, qq)
+                    subplot(3, 4, qq)
                     
                     plot([allValuesALL{gr, var}(qq, :)], 'b.-', 'MarkerSize', 25);hold on
                     %plot(t(1), allValuesALL{gr, var}(qq, (t(1))), '.c', 'MarkerSize', 25); hold on
@@ -343,15 +314,15 @@ for gr=[1:2]
                     
                     line([Divider{gr, var}(qq) Divider{gr, var}(qq)], [-.1 .1], 'Color', 'k', 'LineStyle','--');
                     line([sum(Divider{gr, var}(qq, 1:2)) sum(Divider{gr, var}(qq, 1:2))], [-.1 .1], 'Color', 'k', 'LineStyle','--');
-                    %                     line([sum(Divider{gr, var}(qq, 1:3)) sum(Divider{gr, var}(qq, 1:3))], [-.1 .1], 'Color', 'k', 'LineStyle','--');
-                    %                     line([sum(Divider{gr, var}(qq, 1:4)) sum(Divider{gr, var}(qq, 1:4))], [-.1 .1], 'Color', 'c', 'LineStyle','--');
-                    %                     line([sum(Divider{gr, var}(qq, 1:5)) sum(Divider{gr, var}(qq, 1:5))], [-.1 .1], 'Color', 'c', 'LineStyle','--');
-                    %                     line([sum(Divider{gr, var}(qq, 1:6)) sum(Divider{gr, var}(qq, 1:6))], [-.1 .1], 'Color', 'c', 'LineStyle','--');
-                    %
+                    line([sum(Divider{gr, var}(qq, 1:3)) sum(Divider{gr, var}(qq, 1:3))], [-.1 .1], 'Color', 'k', 'LineStyle','--');
+                    line([sum(Divider{gr, var}(qq, 1:4)) sum(Divider{gr, var}(qq, 1:4))], [-.1 .1], 'Color', 'c', 'LineStyle','--');
+                    line([sum(Divider{gr, var}(qq, 1:5)) sum(Divider{gr, var}(qq, 1:5))], [-.1 .1], 'Color', 'c', 'LineStyle','--');
+                    line([sum(Divider{gr, var}(qq, 1:6)) sum(Divider{gr, var}(qq, 1:6))], [-.1 .1], 'Color', 'c', 'LineStyle','--');
+                    
                     whoIS=cell2mat(adaptDataList{1, gr}(1, qq));
                     title([whoIS(1:end-10) '  Stride to SS = ' num2str(first_t)]);
-                    ylabel('Spatial')
-                    %ylabel('temporal')
+                    %ylabel('Spatial')
+                    ylabel('temporal')
                     xlabel(['OA ' SmoothType])
                     axis tight
                     
@@ -361,7 +332,7 @@ for gr=[1:2]
                 if gr == 2
                     %ToAICAnalysis=[ToAICAnalysis; allValuesALL{gr, var}(qq, :)];
                     figure(2)
-                    subplot(2, 4, qq)
+                    subplot(3, 4, qq)
                     plot([allValuesALL{gr, var}(qq, :)], 'b.-', 'MarkerSize', 25);hold on
                     %plot(t(1), allValuesALL{gr, var}(qq, (t(1))), '.c', 'MarkerSize', 25); hold on
                     plot(whereIS{gr, var}(qq, :):whereIS{gr, var}(qq, :)+9, allValuesALL{gr, var}(qq, whereIS{gr, var}(qq, :):whereIS{gr, var}(qq, :)+9), 'c.', 'MarkerSize', 25);hold on
@@ -372,22 +343,22 @@ for gr=[1:2]
                     
                     line([Divider{gr, var}(qq) Divider{gr, var}(qq)], [-.1 .1], 'Color', 'k', 'LineStyle','--');
                     line([sum(Divider{gr, var}(qq, 1:2)) sum(Divider{gr, var}(qq, 1:2))], [-.1 .1], 'Color', 'k', 'LineStyle','--');
-                    %                     line([sum(Divider{gr, var}(qq, 1:3)) sum(Divider{gr, var}(qq, 1:3))], [-.1 .1], 'Color', 'k', 'LineStyle','--');
-                    %                     line([sum(Divider{gr, var}(qq, 1:4)) sum(Divider{gr, var}(qq, 1:4))], [-.1 .1], 'Color', 'c', 'LineStyle','--');
-                    %                     line([sum(Divider{gr, var}(qq, 1:5)) sum(Divider{gr, var}(qq, 1:5))], [-.1 .1], 'Color', 'c', 'LineStyle','--');
-                    %                     line([sum(Divider{gr, var}(qq, 1:6)) sum(Divider{gr, var}(qq, 1:6))], [-.1 .1], 'Color', 'c', 'LineStyle','--');
+                    line([sum(Divider{gr, var}(qq, 1:3)) sum(Divider{gr, var}(qq, 1:3))], [-.1 .1], 'Color', 'k', 'LineStyle','--');
+                    line([sum(Divider{gr, var}(qq, 1:4)) sum(Divider{gr, var}(qq, 1:4))], [-.1 .1], 'Color', 'c', 'LineStyle','--');
+                    line([sum(Divider{gr, var}(qq, 1:5)) sum(Divider{gr, var}(qq, 1:5))], [-.1 .1], 'Color', 'c', 'LineStyle','--');
+                    line([sum(Divider{gr, var}(qq, 1:6)) sum(Divider{gr, var}(qq, 1:6))], [-.1 .1], 'Color', 'c', 'LineStyle','--');
                     
                     whoIS=cell2mat(adaptDataList{1, gr}(1, qq));
                     title([whoIS(1:end-10) '  Stride to SS = ' num2str(first_t)]);
-                    ylabel('Spatial')
-                    %ylabel('temporal')
+                    %ylabel('Spatial')
+                    ylabel('temporal')
                     xlabel(['OASV ' SmoothType])
                 end
                 
                 if gr == 3
                     %ToAICAnalysis=[ToAICAnalysis; allValuesALL{gr, var}(qq, :)];
                     figure(3)
-                    subplot(2, 4, qq)
+                    subplot(3, 4, qq)
                     plot([allValuesALL{gr, var}(qq, :)], 'b.-', 'MarkerSize', 25);hold on
                     %plot(t(1), allValuesALL{gr, var}(qq, (t(1))), '.c', 'MarkerSize', 25); hold on
                     plot(whereIS{gr, var}(qq, :):whereIS{gr, var}(qq, :)+9, allValuesALL{gr, var}(qq, whereIS{gr, var}(qq, :):whereIS{gr, var}(qq, :)+9), 'c.', 'MarkerSize', 25);hold on
@@ -398,11 +369,11 @@ for gr=[1:2]
                     
                     line([Divider{gr, var}(qq) Divider{gr, var}(qq)], [-.1 .1], 'Color', 'k', 'LineStyle','--');
                     line([sum(Divider{gr, var}(qq, 1:2)) sum(Divider{gr, var}(qq, 1:2))], [-.1 .1], 'Color', 'k', 'LineStyle','--');
-                    %                     line([sum(Divider{gr, var}(qq, 1:3)) sum(Divider{gr, var}(qq, 1:3))], [-.1 .1], 'Color', 'k', 'LineStyle','--');
-                    %                     line([sum(Divider{gr, var}(qq, 1:4)) sum(Divider{gr, var}(qq, 1:4))], [-.1 .1], 'Color', 'c', 'LineStyle','--');
-                    %                     line([sum(Divider{gr, var}(qq, 1:5)) sum(Divider{gr, var}(qq, 1:5))], [-.1 .1], 'Color', 'c', 'LineStyle','--');
-                    %                     line([sum(Divider{gr, var}(qq, 1:6)) sum(Divider{gr, var}(qq, 1:6))], [-.1 .1], 'Color', 'c', 'LineStyle','--');
-                    %
+                    line([sum(Divider{gr, var}(qq, 1:3)) sum(Divider{gr, var}(qq, 1:3))], [-.1 .1], 'Color', 'k', 'LineStyle','--');
+                    line([sum(Divider{gr, var}(qq, 1:4)) sum(Divider{gr, var}(qq, 1:4))], [-.1 .1], 'Color', 'c', 'LineStyle','--');
+                    line([sum(Divider{gr, var}(qq, 1:5)) sum(Divider{gr, var}(qq, 1:5))], [-.1 .1], 'Color', 'c', 'LineStyle','--');
+                    line([sum(Divider{gr, var}(qq, 1:6)) sum(Divider{gr, var}(qq, 1:6))], [-.1 .1], 'Color', 'c', 'LineStyle','--');
+                    
                     whoIS=cell2mat(adaptDataList{1, gr}(1, qq));
                     title([whoIS(1:end-10) '  Stride to SS = ' num2str(first_t)]);
                     ylabel('Spatial')
@@ -413,7 +384,7 @@ for gr=[1:2]
                 if gr == 4
                     ToAICAnalysis=[ToAICAnalysis; allValuesALL{gr, var}(qq, :)];
                     figure(4)
-                    subplot(2, 4, qq)
+                    subplot(3, 4, qq)
                     
                     plot([allValuesALL{gr, var}(qq, :)], 'b.-', 'MarkerSize', 25);hold on
                     %plot(t(1), allValuesALL{gr, var}(qq, (t(1))), '.c', 'MarkerSize', 25); hold on
@@ -425,11 +396,11 @@ for gr=[1:2]
                     
                     line([Divider{gr, var}(qq) Divider{gr, var}(qq)], [-.1 .1], 'Color', 'k', 'LineStyle','--');
                     line([sum(Divider{gr, var}(qq, 1:2)) sum(Divider{gr, var}(qq, 1:2))], [-.1 .1], 'Color', 'k', 'LineStyle','--');
-                    %                     line([sum(Divider{gr, var}(qq, 1:3)) sum(Divider{gr, var}(qq, 1:3))], [-.1 .1], 'Color', 'k', 'LineStyle','--');
-                    %                     line([sum(Divider{gr, var}(qq, 1:4)) sum(Divider{gr, var}(qq, 1:4))], [-.1 .1], 'Color', 'c', 'LineStyle','--');
-                    %                     line([sum(Divider{gr, var}(qq, 1:5)) sum(Divider{gr, var}(qq, 1:5))], [-.1 .1], 'Color', 'c', 'LineStyle','--');
-                    %                     line([sum(Divider{gr, var}(qq, 1:6)) sum(Divider{gr, var}(qq, 1:6))], [-.1 .1], 'Color', 'c', 'LineStyle','--');
-                    %
+                    line([sum(Divider{gr, var}(qq, 1:3)) sum(Divider{gr, var}(qq, 1:3))], [-.1 .1], 'Color', 'k', 'LineStyle','--');
+                    line([sum(Divider{gr, var}(qq, 1:4)) sum(Divider{gr, var}(qq, 1:4))], [-.1 .1], 'Color', 'c', 'LineStyle','--');
+                    line([sum(Divider{gr, var}(qq, 1:5)) sum(Divider{gr, var}(qq, 1:5))], [-.1 .1], 'Color', 'c', 'LineStyle','--');
+                    line([sum(Divider{gr, var}(qq, 1:6)) sum(Divider{gr, var}(qq, 1:6))], [-.1 .1], 'Color', 'c', 'LineStyle','--');
+                    
                     whoIS=cell2mat(adaptDataList{1, gr}(1, qq));
                     title([whoIS(1:end-10) '  Stride to SS = ' num2str(first_t)]);
                     ylabel('Spatial')
@@ -448,19 +419,17 @@ for gr=[1:2]
 end
 
 figure(5)
-plot(mean(allValuesALL{1, 1}), '.b', 'MarkerSize', 25);hold on
-plot(mean(allValuesALL{2, 1}), '.r', 'MarkerSize', 25);hold on
-plot(mean(allValuesALL{3, 1}), '.m', 'MarkerSize', 25);hold on
-%                 plot(mean(allValuesALL{3, 1}), '.', 'MarkerSize', 25);hold on
-%                 plot(mean(allValuesALL{4, 1}), '.', 'MarkerSize', 25);hold on
-legend('CB', 'SB')
-%     line([Divider{gr, var}(1) Divider{gr, var}(1)], [-.1 .25], 'Color', 'k', 'LineStyle','--');
-line([Divider{1, 4}(1) Divider{1, 4}(1)], [-.1 .25], 'Color', 'g', 'LineStyle','--');
-%                 line([sum(Divider{gr, var}(1:2)) sum(Divider{gr, var}(1:2))], [-.1 .25], 'Color', 'k', 'LineStyle','--');
-%                     line([sum(Divider{gr, var}(1:3)) sum(Divider{gr, var}(1:3))], [-.1 .25], 'Color', 'k', 'LineStyle','--');
-%                     line([sum(Divider{gr, var}(1:4)) sum(Divider{gr, var}(1:4))], [-.1 .25], 'Color', 'c', 'LineStyle','--');
-% %                     line([sum(Divider{gr, var}(1:5)) sum(Divider{gr, var}(1:5))], [-.1 .25], 'Color', 'c', 'LineStyle','--');
-%                     line([sum(Divider{gr, var}(1:6)) sum(Divider{gr, var}(1:6))], [-.1 .25], 'Color', 'c', 'LineStyle','--');
+plot(mean(allValuesALL{1, 1}), '.', 'MarkerSize', 25);hold on
+plot(mean(allValuesALL{2, 1}), '.', 'MarkerSize', 25);hold on
+plot(mean(allValuesALL{3, 1}), '.', 'MarkerSize', 25);hold on
+plot(mean(allValuesALL{4, 1}), '.', 'MarkerSize', 25);hold on
+legend('OA', 'OASV', 'YA', 'YASV')
+line([Divider{gr, var}(1) Divider{gr, var}(1)], [-.1 .25], 'Color', 'k', 'LineStyle','--');
+line([sum(Divider{gr, var}(1:2)) sum(Divider{gr, var}(1:2))], [-.1 .25], 'Color', 'k', 'LineStyle','--');
+line([sum(Divider{gr, var}(1:3)) sum(Divider{gr, var}(1:3))], [-.1 .25], 'Color', 'k', 'LineStyle','--');
+line([sum(Divider{gr, var}(1:4)) sum(Divider{gr, var}(1:4))], [-.1 .25], 'Color', 'c', 'LineStyle','--');
+line([sum(Divider{gr, var}(1:5)) sum(Divider{gr, var}(1:5))], [-.1 .25], 'Color', 'c', 'LineStyle','--');
+line([sum(Divider{gr, var}(1:6)) sum(Divider{gr, var}(1:6))], [-.1 .25], 'Color', 'c', 'LineStyle','--');
 title(['Group Averages: ' SmoothType]);
 ylabel('Spatial')
 xlabel(['Strides'])
@@ -602,7 +571,7 @@ for g=1:size(adaptDataList, 2)%4
 end
 %%%end
 
-% FinalStata= [IntoStata_epoch IntoStata_p IntoStata_age IntoStata_visit IntoStata_dataS IntoStata_dataT IntoStata_dataV IntoStata_dataN IntoStata_group IntoStata_strideS IntoStata_strideT ones(33,1) IntoStata_strideN];
+FinalStata= [IntoStata_epoch IntoStata_p IntoStata_age IntoStata_visit IntoStata_dataS IntoStata_dataT IntoStata_dataV IntoStata_dataN IntoStata_group IntoStata_strideS IntoStata_strideT ones(33,1) IntoStata_strideN];
 
 display('everything is awesome')
 
