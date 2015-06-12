@@ -252,6 +252,21 @@ for g=1:ngroups
             results.Washout.indiv.(params{p})=[g*ones(nSubs,1) washout(:,p)];
             results.Transfer2.indiv.(params{p})=[g*ones(nSubs,1) transfer2(:,p)];
             results.Washout2.indiv.(params{p})=[g*ones(nSubs,1) washout2(:,p)];
+
+%             results.OGbase.indiv=[g*ones(nSubs,1) OGbase];
+%             results.TMbase.indiv=[g*ones(nSubs,1) TMbase];
+%             results.AvgAdaptBeforeCatch.indiv=[g*ones(nSubs,1) avgAdaptBC];
+%             results.AvgAdaptAll.indiv=[g*ones(nSubs,1) avgAdaptAll];
+%             results.ErrorsOut.indiv=[g*ones(nSubs,1) errorsOut];
+%             results.TMsteadyBeforeCatch.indiv=[g*ones(nSubs,1) tmsteadyBC];
+%             results.catch.indiv=[g*ones(nSubs,1) tmCatch];
+%             results.TMsteady.indiv=[g*ones(nSubs,1) tmsteady];
+%             results.OGafter.indiv=[g*ones(nSubs,1) ogafter];
+%             results.TMafter.indiv=[g*ones(nSubs,1) tmafter];
+%             results.Transfer.indiv=[g*ones(nSubs,1) transfer];
+%             results.Washout.indiv=[g*ones(nSubs,1) washout];
+%             results.Transfer2.indiv=[g*ones(nSubs,1) transfer2];
+%             results.Washout2.indiv=[g*ones(nSubs,1) washout2];            
         end
     else        
         for p=1:length(params)     
@@ -269,6 +284,21 @@ for g=1:ngroups
             results.Washout.indiv.(params{p})(end+1:end+nSubs,1:2)=[g*ones(nSubs,1) washout(:,p)];
             results.Transfer2.indiv.(params{p})(end+1:end+nSubs,1:2)=[g*ones(nSubs,1) transfer2(:,p)];
             results.Washout2.indiv.(params{p})(end+1:end+nSubs,1:2)=[g*ones(nSubs,1) washout2(:,p)];
+
+%             results.OGbase.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) OGbase];
+%             results.TMbase.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) TMbase];
+%             results.AvgAdaptBeforeCatch.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) avgAdaptBC];
+%             results.AvgAdaptAll.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) avgAdaptAll];
+%             results.ErrorsOut.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) errorsOut];
+%             results.TMsteadyBeforeCatch.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) tmsteadyBC];
+%             results.catch.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) tmCatch];
+%             results.TMsteady.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) tmsteady];
+%             results.OGafter.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) ogafter];
+%             results.TMafter.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) tmafter];
+%             results.Transfer.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) transfer];
+%             results.Washout.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) washout];
+%             results.Transfer2.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) transfer2];
+%             results.Washout2.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) washout2];
         end
     end
 end
@@ -300,5 +330,4 @@ if nargin>4 && plotFlag
     end   
 
 end
-
 
