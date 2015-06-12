@@ -1,4 +1,4 @@
-function results = getResults(SMatrix,params,groups,maxPerturb,plotFlag,indivFlag)
+function results = getResults_MaxSpatial(SMatrix,params,groups,maxPerturb,plotFlag,indivFlag)
 
 % define number of points to use for calculating values
 catchNumPts = 3; %catch
@@ -87,15 +87,15 @@ for g=1:ngroups
          if nargin>3 && maxPerturb==1             
                        
             % compute TM and OG base in same manner as calculating OG after and TM after
-            stepAsymData=adaptData.getParamInCond('stepLengthAsym','OG base');
+            stepAsymData=adaptData.getParamInCond('spatialContributionNorm2','OG base');
             OGbaseData=adaptData.getParamInCond(params,'OG base');
 %             OGbase=[OGbase; smoothedMax(OGbaseData(1:10,:),10,stepAsymData(1:10))];
             OGbase=[OGbase; smoothedMax(OGbaseData(1:10,:),transientNumPts,stepAsymData(1:10))];
 
-            stepAsymData=adaptData.getParamInCond('stepLengthAsym','TM base');
+            stepAsymData=adaptData.getParamInCond('spatialContributionNorm2','TM base');
             TMbaseData=adaptData.getParamInCond(params,'TM base');
             if isempty(TMbaseData)
-                stepAsymData=adaptData.getParamInCond('stepLengthAsym',{'slow base','fast base'});
+                stepAsymData=adaptData.getParamInCond('spatialContributionNorm2',{'slow base','fast base'});
                 TMbaseData=adaptData.getParamInCond(params,{'slow base','fast base'});
             end
             TMbase=[TMbase; smoothedMax(TMbaseData(1:10,:),transientNumPts,stepAsymData(1:10))];
@@ -103,19 +103,19 @@ for g=1:ngroups
             % compute catch as mean value during strides which caused a
             % maximum deviation from zero during 'catchNumPts' consecutive
             % strides
-            stepAsymData=adaptData.getParamInCond('stepLengthAsym','catch');
+            stepAsymData=adaptData.getParamInCond('spatialContributionNorm2','catch');
             tmcatchData=adaptData.getParamInCond(params,'catch');
             tmCatch=[tmCatch; smoothedMax(tmcatchData,transientNumPts,stepAsymData)];
             
             % compute OG after as mean values during strides which cause a
             % maximum deviation from zero in STEP LENGTH ASYMMETRY during
             % 'transientNumPts' consecutive strides within first 10 strides
-            stepAsymData=adaptData.getParamInCond('stepLengthAsym','OG post');
+            stepAsymData=adaptData.getParamInCond('spatialContributionNorm2','OG post');
             ogafterData=adaptData.getParamInCond(params,'OG post');
             ogafter=[ogafter; smoothedMax(ogafterData(1:10,:),transientNumPts,stepAsymData(1:10))];
             
             % compute TM after-effects same as OG after-effect
-            stepAsymData=adaptData.getParamInCond('stepLengthAsym','TM post');
+            stepAsymData=adaptData.getParamInCond('spatialContributionNorm2','TM post');
             tmafterData=adaptData.getParamInCond(params,'TM post');            
             tmafter=[tmafter; smoothedMax(tmafterData(1:10,:),transientNumPts,stepAsymData(1:10))];
             
@@ -253,21 +253,6 @@ for g=1:ngroups
             results.Washout.indiv.(params{p})=[g*ones(nSubs,1) washout(:,p)];
             results.Transfer2.indiv.(params{p})=[g*ones(nSubs,1) transfer2(:,p)];
             results.Washout2.indiv.(params{p})=[g*ones(nSubs,1) washout2(:,p)];
-
-%             results.OGbase.indiv=[g*ones(nSubs,1) OGbase];
-%             results.TMbase.indiv=[g*ones(nSubs,1) TMbase];
-%             results.AvgAdaptBeforeCatch.indiv=[g*ones(nSubs,1) avgAdaptBC];
-%             results.AvgAdaptAll.indiv=[g*ones(nSubs,1) avgAdaptAll];
-%             results.ErrorsOut.indiv=[g*ones(nSubs,1) errorsOut];
-%             results.TMsteadyBeforeCatch.indiv=[g*ones(nSubs,1) tmsteadyBC];
-%             results.catch.indiv=[g*ones(nSubs,1) tmCatch];
-%             results.TMsteady.indiv=[g*ones(nSubs,1) tmsteady];
-%             results.OGafter.indiv=[g*ones(nSubs,1) ogafter];
-%             results.TMafter.indiv=[g*ones(nSubs,1) tmafter];
-%             results.Transfer.indiv=[g*ones(nSubs,1) transfer];
-%             results.Washout.indiv=[g*ones(nSubs,1) washout];
-%             results.Transfer2.indiv=[g*ones(nSubs,1) transfer2];
-%             results.Washout2.indiv=[g*ones(nSubs,1) washout2];            
         end
     else        
         for p=1:length(params)     
@@ -285,21 +270,6 @@ for g=1:ngroups
             results.Washout.indiv.(params{p})(end+1:end+nSubs,1:2)=[g*ones(nSubs,1) washout(:,p)];
             results.Transfer2.indiv.(params{p})(end+1:end+nSubs,1:2)=[g*ones(nSubs,1) transfer2(:,p)];
             results.Washout2.indiv.(params{p})(end+1:end+nSubs,1:2)=[g*ones(nSubs,1) washout2(:,p)];
-
-%             results.OGbase.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) OGbase];
-%             results.TMbase.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) TMbase];
-%             results.AvgAdaptBeforeCatch.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) avgAdaptBC];
-%             results.AvgAdaptAll.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) avgAdaptAll];
-%             results.ErrorsOut.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) errorsOut];
-%             results.TMsteadyBeforeCatch.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) tmsteadyBC];
-%             results.catch.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) tmCatch];
-%             results.TMsteady.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) tmsteady];
-%             results.OGafter.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) ogafter];
-%             results.TMafter.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) tmafter];
-%             results.Transfer.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) transfer];
-%             results.Washout.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) washout];
-%             results.Transfer2.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) transfer2];
-%             results.Washout2.indiv(end+1:end+nSubs,:)=[g*ones(nSubs,1) washout2];
         end
     end
 end
@@ -331,4 +301,5 @@ if nargin>4 && plotFlag
 %     end   
 
 end
+
 

@@ -13,21 +13,21 @@ StepsR=[];
 StepsL=[];
 Steps=[];
 Stepsnexus=[];
-results=[];
-% results.locRindex=[];
-% results.locLindex=[];
-% results.locLindex2=[];
-% results.alphaRPyton=[];
-% results.alphaLPyton=[];
-% results.Rtarget=[];
-% results.Ltarget=[];
-% results.RscaleGood=[];
-% results.LscaleGood=[];
-% results.GoodRHS=[];
-% results.GoodLHS=[];
-% result.stepLengthAsym=[];
-% results.GoodnexusR=[];
-% results.GoodnexusL=[];
+
+results.locRindex=[];
+results.locLindex=[];
+results.locLindex2=[];
+results.alphaRPyton=[];
+results.alphaLPyton=[];
+results.Rtarget=[];
+results.Ltarget=[];
+results.RscaleGood=[];
+results.LscaleGood=[];
+results.GoodRHS=[];
+results.GoodLHS=[];
+result.stepLengthAsym=[];
+results.GoodnexusR=[];
+results.GoodnexusL=[];
 
 for p=1:length(condition)
     
