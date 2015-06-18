@@ -26,6 +26,12 @@ for i=1:length(fileList)
         %abrevGroup=group(spaces+1);
         group=group(ismember(group,['A':'Z' 'a':'z']));
         abrevGroup=group;
+        if strcmp(group,'OG')
+        group=adaptData.metaData.ID;
+        spaces=find(group==' ');
+        abrevGroup=group(spaces+1);%         
+        abrevGroup=[group(1) abrevGroup];
+        end
         %get conditions
         conditions=adaptData.metaData.conditionName;
         conditions=conditions(~cellfun('isempty',conditions));

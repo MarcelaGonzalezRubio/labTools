@@ -189,6 +189,7 @@ classdef labData
                 eventClass=[];
             end
             
+            
             % 1) Extract amplitude from emg data if present
             spikeRemovalFlag=0;
             [procEMGData,filteredEMGData] = processEMG(this,spikeRemovalFlag);

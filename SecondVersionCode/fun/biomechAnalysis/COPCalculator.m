@@ -152,10 +152,10 @@ GRFyR = filtfilthd(TheDesign,GRFyR);
 GRFzR = filtfilthd(TheDesign,GRFzR);
 % Apply a filter to the moment data collected as well.
 [Bmom, Amom]=butter(4,10/(1000/2));
-GRMxL=filtfilt(Bmom, Amom, GRMxL);
-GRMyL=filtfilt(Bmom, Amom, GRMyL);
-GRMxR=filtfilt(Bmom, Amom, GRMxR);
-GRMyR=filtfilt(Bmom, Amom, GRMyR);
+GRMxL=filtfilt(Bmom, Amom, GRMxL)';
+GRMyL=filtfilt(Bmom, Amom, GRMyL)';
+GRMxR=filtfilt(Bmom, Amom, GRMxR)';
+GRMyR=filtfilt(Bmom, Amom, GRMyR)';
 
 
 % Set all moment and some force data equal to zero when the foot is not
@@ -207,10 +207,10 @@ GRMyR=filtfilt(Bmom, Amom, GRMyR);
 %-----------------------------------------------------
 
 % Calculate the center of pressure for the data.
-COPxL=[(((-.005.*GRFxL'-GRMyL./1000)./GRFzL'))]*1000;%millimeters
-COPyL=[(((-.005.*GRFyL'+GRMxL./1000)./GRFzL'))]*1000;
-COPxR=[(((-.005.*-1.*GRFxR'+GRMyR./1000)./GRFzR'))]*1000;
-COPyR=[(((-.005.*GRFyR'+GRMxR./1000)./GRFzR'))]*1000;
+COPxL=[(((-.005.*GRFxL-GRMyL./1000)./GRFzL))]*1000;%millimeters
+COPyL=[(((-.005.*GRFyL+GRMxL./1000)./GRFzL))]*1000;
+COPxR=[(((-.005.*-1.*GRFxR+GRMyR./1000)./GRFzR))]*1000;
+COPyR=[(((-.005.*GRFyR+GRMxR./1000)./GRFzR))]*1000;
 % Transform the center of pressure data from the local treadmill
 % coordinate system to the global vicon coordinate system.
 LTransformationMatrix=[1,0,0,0;20,1,0,0;1612,0,-1,0;0,0,0,-1];
@@ -330,11 +330,10 @@ end
 % end
 %----------------------------------
 
-COPData=[NewCOPxL' NewCOPyL' zeros(size(NewCOPxL))' NewCOPxR' NewCOPyR' zeros(size(NewCOPxR))' GRFxL GRFyL GRFzL GRFxR GRFyR GRFzR GRMxL' GRMyL' zeros(size(GRMyL))' GRMxR' GRMyR' zeros(size(GRMyL))'];
+COPData=[NewCOPxL' NewCOPyL' zeros(size(NewCOPxL))' NewCOPxR' NewCOPyR' zeros(size(NewCOPxR))' GRFxL GRFyL GRFzL GRFxR GRFyR GRFzR GRMxL GRMyL zeros(size(GRMyL)) GRMxR GRMyR zeros(size(GRMyL))];
 
 %Pablo: creating orientedLabTS
 COPTS=orientedLabTimeSeries(COPData,GRFData.Time(1),GRFData.sampPeriod,{'LCOPx','LCOPy','LCOPz','RCOPx','RCOPy','RCOPz', 'LGRFx','LGRFy','LGRFz','RGRFx','RGRFy','RGRFz','LGRMx','LGRMy','LGRMz','RGRMx','RGRMy','RGRMz'},or);
 
 
 end
-

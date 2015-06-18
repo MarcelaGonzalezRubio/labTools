@@ -102,10 +102,10 @@ LineOrder={'-',':','--','-.'};
 %% Load data and determine length of trials or conditions
 nConds=length(conditions);
 s=1; %subject counter
-for group=1:Ngroups
-    for subject=1:length(adaptDataList{group})
+for group2=1:Ngroups
+    for subject=1:length(adaptDataList{group2})
         %Load subject
-        load(adaptDataList{group}{subject});
+        load(adaptDataList{group2}{subject});
         adaptData = adaptData.removeBadStrides;
         adaptData = adaptData.removeBias;
         
@@ -126,13 +126,13 @@ for group=1:Ngroups
                 end
                 for p=1:length(params)
                     %itialize so there are no inconsistant dimensions or out of bounds errors
-                    values(group).(params{p}).(cond{c}).(['trial' num2str(t)])(subject,:)=NaN(1,2000); %this assumes that the max number of data points that could exist in a single conition or trial is 2000
+                    values(group2).(params{p}).(cond{c}).(['trial' num2str(t)])(subject,:)=NaN(1,2000); %this assumes that the max number of data points that could exist in a single conition or trial is 2000
                     
 %                     %%VELOCITY CONTRIBUTION IS FLIPPED HERE
 %                     if strcmp(params{p},'velocityContribution')
 %                         values(group).(params{p}).(cond{c}).(['trial' num2str(t)])(subject,1:nPoints)=-dataPts(:,p);
 %                     else
-                    values(group).(params{p}).(cond{c}).(['trial' num2str(t)])(subject,1:nPoints)=dataPts(:,p);
+                    values(group2).(params{p}).(cond{c}).(['trial' num2str(t)])(subject,1:nPoints)=dataPts(:,p);
 %                     end
                 end
             end
@@ -143,12 +143,12 @@ end
 
 %% Do the actual plotting
 
-for group=1:Ngroups
+for group2=1:Ngroups
     Xstart=1;
     lineX=0;
-    subjects=adaptDataList{group};
+    subjects=adaptDataList{group2};
     for c=1:length(conditions)
-        for t=1:length(fields(values(group).(params{p}).(cond{c})));
+        for t=1:length(fields(values(group2).(params{p}).(cond{c})));
             
             % 1) find the length of each trial
             if maxNumPts
@@ -175,7 +175,7 @@ for group=1:Ngroups
             
             for p=1:length(params)                
                 
-                allValues=values(group).(params{p}).(cond{c}).(['trial' num2str(t)])(:,1:maxPts);
+                allValues=values(group2).(params{p}).(cond{c}).(['trial' num2str(t)])(:,1:maxPts);
 
                 % 2) average across subjuects within bins
 
@@ -193,9 +193,9 @@ for group=1:Ngroups
 
                     %errors calculated as standard error of averaged subject points
                     subBin=nanmean(bin,2);
-                    avg(group).(params{p}).(cond{c}).(['trial' num2str(t)])(i)=nanmean(subBin);
-                    se(group).(params{p}).(cond{c}).(['trial' num2str(t)])(i)=nanstd(subBin)/sqrt(length(subBin));
-                    indiv(group).(params{p}).(cond{c}).(['trial' num2str(t)])(:,i)=subBin;
+                    avg(group2).(params{p}).(cond{c}).(['trial' num2str(t)])(i)=nanmean(subBin);
+                    se(group2).(params{p}).(cond{c}).(['trial' num2str(t)])(i)=nanstd(subBin)/sqrt(length(subBin));
+                    indiv(group2).(params{p}).(cond{c}).(['trial' num2str(t)])(:,i)=subBin;
 
 %                     %errors calculated as standard error of all data
 %                     %points (before indiv subjects are averaged)
@@ -208,27 +208,27 @@ for group=1:Ngroups
                 if size(params,1)>1
                     axes(ah)
                     g=p;
-                    Cdiv=group;
+                    Cdiv=group2;
                     if Ngroups==1
                         legStr=params(p);
                     else
-                        if length(adaptDataList{group})>1
-                            load(adaptDataList{group}{1})
+                        if length(adaptDataList{group2})>1
+                            load(adaptDataList{group2}{1})
                             legStr={[params{p} ' ' adaptData.metaData.ID]};
                         else
-                            legStr={[params{p} ' ' adaptDataList{group}{:}]};                            
+                            legStr={[params{p} ' ' adaptDataList{group2}{:}]};                            
                         end
                         
                     end
                 else
                     axes(ah(p))
-                    g=group;
+                    g=group2;
                     Cdiv=1;
                 end
                 hold on
                 afterTrialPad=5; %adds empty sapce to end of trial/condition (in strides)
-                y=[avg(group).(params{p}).(cond{c}).(['trial' num2str(t)]), NaN(1,afterTrialPad)];
-                E=[se(group).(params{p}).(cond{c}).(['trial' num2str(t)]), NaN(1,afterTrialPad)];
+                y=[avg(group2).(params{p}).(cond{c}).(['trial' num2str(t)]), NaN(1,afterTrialPad)];
+                E=[se(group2).(params{p}).(cond{c}).(['trial' num2str(t)]), NaN(1,afterTrialPad)];
                 condLength=length(y);
                 x=Xstart:Xstart+condLength-1;
                 
@@ -249,23 +249,23 @@ for group=1:Ngroups
                 
                 if indivFlag %plotting all individual subjects
                     if ~isempty(indivSubs{1}) %plot specific individual subjects
-                        subsToPlot=indivSubs{group};
+                        subsToPlot=indivSubs{group2};
                     else
                         subsToPlot=subjects;
                     end
                     for s=1:length(subsToPlot)
                         subInd=find(ismember(subjects,subsToPlot{s}));
-                        y_ind=[indiv(group).(params{p}).(cond{c}).(['trial' num2str(t)])(subInd,:), NaN(1,afterTrialPad)];
+                        y_ind=[indiv(group2).(params{p}).(cond{c}).(['trial' num2str(t)])(subInd,:), NaN(1,afterTrialPad)];
                         %%to plot as dots:
-                        Li{group}(s)=plot(x,y_ind,'o','MarkerSize',5,'MarkerEdgeColor',ColorOrder(subInd,:),'MarkerFaceColor',ColorOrder(subInd,:));
+                        Li{group2}(s)=plot(x,y_ind,'o','MarkerSize',5,'MarkerEdgeColor',ColorOrder(subInd,:),'MarkerFaceColor',ColorOrder(subInd,:));
                         %%to plot as lines:
-                        Li{group}(s)=plot(x,y_ind,LineOrder{g},'color',ColorOrder(mod(subInd-1,size(ColorOrder,1))+1,:));
-                        legendStr{group}=subsToPlot;
+                        Li{group2}(s)=plot(x,y_ind,LineOrder{g},'color',ColorOrder(mod(subInd-1,size(ColorOrder,1))+1,:));
+                        legendStr{group2}=subsToPlot;
                     end
-                    if length(adaptDataList{group})>1
-                        Li{group}(end+1)=plot(x,y,'o','MarkerSize',3,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',[0.7 0.7 0.7].^group);
-                        load(adaptDataList{group}{1})
-                        legendStr{group}(end+1)={['Average ' adaptData.metaData.ID]};                                               
+                    if length(adaptDataList{group2})>1
+                        Li{group2}(end+1)=plot(x,y,'o','MarkerSize',3,'MarkerEdgeColor',[0 0 0],'MarkerFaceColor',[0.7 0.7 0.7].^group2);
+                        load(adaptDataList{group2}{1})
+                        legendStr{group2}(end+1)={['Average ' adaptData.metaData.ID]};                                               
                     end                    
                 else %only plot group averages
                     if Ngroups==1 && ~(size(params,1)>1) && isempty(biofeedback)   %one group (each condition colored different)
@@ -274,7 +274,7 @@ for group=1:Ngroups
                         H=get(Li{c},'Parent');
                         legendStr={conditions};
                     elseif size(params,1)>1  && isempty(biofeedback) %Each parameter colored differently (and shaded differently for different groups)
-                        ind=(group-1)*size(params,1)+p;
+                        ind=(group2-1)*size(params,1)+p;
                         color=ColorOrder(g,:)./Cdiv;
                         [Pa, Li{ind}]=nanJackKnife(x,y,E,color,color+0.5.*abs(color-1),0.7);
                         set(Li{ind},'Clipping','off')
@@ -286,11 +286,18 @@ for group=1:Ngroups
                         set(Li{g},'Clipping','off')
                         H=get(Li{g},'Parent');
                         load([adaptDataList{g}{1,1}])
-                        group2=adaptData.subData.ID;
-                        spaces=find(group2==' ');
-                        abrevGroup=group2(spaces+1);
-                        group2=group2(ismember(group2,['A':'Z' 'a':'z']));
-                        abrevGroup=[group2];
+                        groupE=adaptData.subData.ID;
+                        spaces=find(groupE==' ');
+                        abrevGroup=groupE(spaces+1);
+                        groupE=groupE(ismember(groupE,['A':'Z' 'a':'z']));
+                        abrevGroup=[groupE];
+                        if strcmp(groupE,'OG')
+                            groupE=adaptData.metaData.ID;
+                            spaces=find(groupE==' ');
+                            abrevGroup=groupE(spaces+1);%
+                            abrevGroup=[groupE(1) abrevGroup];
+                        end
+                        
                         legendStr{g}={[ abrevGroup]};
                     elseif Ngroups==1 && ~(size(params,1)>1) && ~isempty(biofeedback)
                         [Pa, Li{c}]=nanJackKnife(x,y,E,ColorOrder(c,:),ColorOrder(c,:)+0.5.*abs(ColorOrder(c,:)-1),0.7,w);
@@ -315,7 +322,7 @@ for group=1:Ngroups
             Xstart=Xstart+condLength;
         end
         
-        if c==length(conditions) && group==Ngroups
+        if c==length(conditions) && group2==Ngroups
             %on last iteration of conditions loop, add title and
             %vertical lines to seperate conditions
             for p=1:length(params)
@@ -328,14 +335,17 @@ for group=1:Ngroups
                 axis tight
                 line([lineX; lineX],ylim,'color','k')
                 xticks=lineX+diff([lineX Xstart])./2;
-                set(gca,'fontsize',axesFontSize,'Xlim',[0 Xstart],'Xtick', xticks, 'Xticklabel', conditions)
+                %                 set(gca,'fontsize',axesFontSize,'Xlim',[0 Xstart],'Xtick', xticks, 'Xticklabel', conditions)
+                h=refline(0,0);
+                set(h,'color','k')
             end
-            h=refline(0,0);
-            set(h,'color','k')
+           
             hold off
         end
-        lineX(end+1)=Xstart-0.5;        
+        lineX(end+1)=Xstart-0.5;   
+            
     end
+   
 end
 
 %linkaxes(ah,'x')

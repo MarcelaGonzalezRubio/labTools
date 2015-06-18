@@ -5,6 +5,7 @@ function barGroups(SMatrix,results,groups,params,epochs,indivFlag,colorOrder)
 
 if nargin<7 || isempty(colorOrder) || size(colorOrder,2)~=3    
     poster_colors;
+    poster_colorsHH;
     colorOrder=[p_red; p_orange; p_fade_green; p_fade_blue; p_plum; p_green; p_blue; p_fade_red; p_lime; p_yellow; p_gray; p_black;[1 1 1]];         
 end
 % Set grey colors to use when individual subjects are plotted 
@@ -34,18 +35,18 @@ for p=1:length(params)
            nSubs=length(SMatrix.(groups{b}).IDs(:,1));
            ind=find(strcmp(fields(SMatrix),groups{b}));
            if nargin>5 && indivFlag
-               bar(b,results.(epochs{t}).avg(b,p),'facecolor',greyOrder(ind,:));
+               bar(b,results.(epochs{t}).avg(b,p),'facecolor',greyOrder(b,:));
                for s=1:nSubs
                    aux=results.(epochs{t}).indiv.(params{p});
                    aux=aux(aux(:,1)==b,2);                   
                    plot(b,aux(s),'*','Color',colorOrder(s,:))                 
                end
            else
-               bar(b,results.(epochs{t}).avg(b,p),'facecolor',colorOrder(ind,:));
+               bar(b,results.(epochs{t}).avg(b,p),'facecolor',colorOrder(b,:));
            end
        end
        errorbar(results.(epochs{t}).avg(:,p),results.(epochs{t}).se(:,p),'.','LineWidth',2,'Color','k')
-       set(gca,'Xtick',1:ngroups,'XTickLabel',abrevGroups,'fontSize',12)
+       set(gca,'Xtick',1:ngroups,'XTickLabel',groups,'fontSize',12)
        axis tight
        limy=[limy get(gca,'Ylim')];
        ylabel(params{p})

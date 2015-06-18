@@ -278,7 +278,7 @@ end
 if nargin>4 && plotFlag
     
     % FIRST: plot baseline values against catch and transfer
-    epochs={'OGafter','TMafter'};
+    epochs={'OGafter'};
     if nargin>5 %I imagine there has to be a better way to do this...
         barGroups(SMatrix,results,groups,params,epochs,indivFlag)
     else
@@ -301,5 +301,4 @@ if nargin>4 && plotFlag
 %     end   
 
 end
-
 
