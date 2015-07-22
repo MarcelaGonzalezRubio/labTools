@@ -25,29 +25,30 @@ classdef orientationInfo
                end
            end
            if nargin>2 && ~isempty(sideAx) && isa(sideAx,'char')
-               else
-                   error('OrientationInfo:Constructor','Axis is not one of ''x'', ''y'' or ''z''.')
                if strcmp(sideAx,'x') || strcmp(sideAx,'y') || strcmp(sideAx,'z')
                     this.sideAxis=sideAx;
+               else
+                   error('OrientationInfo:Constructor','Axis is not one of ''x'', ''y'' or ''z''.')
                end
            end
            if nargin>3 && ~isempty(updownAx) && isa(updownAx,'char')
-               else
-                   error('OrientationInfo:Constructor','Axis is not one of ''x'', ''y'' or ''z''.')
                if strcmp(updownAx,'x') || strcmp(updownAx,'y') || strcmp(updownAx,'z')
                     this.updownAxis=updownAx;
+               else
+                   error('OrientationInfo:Constructor','Axis is not one of ''x'', ''y'' or ''z''.')
                end
            end
            if nargin>4 && ~isempty(foreaftSign)
-           end
-           end
                this.foreaftSign=foreaftSign;
-    
+           end
            if nargin>5 && ~isempty(sideSign)
                this.sideSign=sideSign;
-end
+           end
            if nargin>6 && ~isempty(updownSign)
                this.updownSign=updownSign;
            end
         end
     end
+    
+end
+

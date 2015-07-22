@@ -5,6 +5,8 @@ load([subject 'params.mat'])
 load([subject '.mat'])
 load([subject 'RAW.mat'])
 
+adaptData = adaptData.removeBadStrides;
+
 condition= adaptData.metaData.conditionName;
 condition=condition(find(~cellfun(@isempty,adaptData.metaData.trialsInCondition)));
 
@@ -279,7 +281,7 @@ for p=1:length(condition)
        
         %%
         %Good strides
-        GoodEvents=expData.data{j}.adaptParams.Data(:,1);
+        GoodEvents=expData.data{j}.adaptParams.Data(:,2);
         locRindex=locRindex((GoodEvents)==1,1);
         locLindex=locLindex((GoodEvents)==1,1);
         locLindex2=locLindex2((GoodEvents)==1,1);
@@ -370,6 +372,7 @@ for p=1:length(condition)
         
         
         %%
+        
         alphaRnexus=adaptData.getParamInCond({'alphaFast'},condition{p});
         alphaLnexusTemp=adaptData.getParamInCond({'alphaTemp'},condition{p});
         alphaLnexus=adaptData.getParamInCond({'alphaSlow'},condition{p});
@@ -553,7 +556,8 @@ labels={'TargetHitR', 'TargetHitL', 'TargetHit','TargetNexus'};
 if all(aux)
     adaptData.data.Data(:,idx)=[StepsR,StepsL,Steps,Stepsnexus];
 else
-    this=paramData([adaptData.data.Data,StepsR,StepsL,Steps,Stepsnexus],[adaptData.data.labels 'TargetHitR' 'TargetHitL' 'TargetHit' 'TargetNexus'],adaptData.data.indsInTrial,adaptData.data.trialTypes);
+    this=parameterSeries([adaptData.data.Data,StepsR,StepsL,Steps,Stepsnexus],[adaptData.data.labels; 'TargetHitR'; 'TargetHitL' ;'TargetHit'; 'TargetNexus'],1:length(adaptData.data.Data),cell(length(adaptData.data.labels)+4));
+    %this=paramData([adaptData.data.Data,StepsR,StepsL,Steps,Stepsnexus],[adaptData.data.labels; 'TargetHitR'; 'TargetHitL' ;'TargetHit'; 'TargetNexus'],adaptData.data.indsInTrial,adaptData.data.trialTypes);
     adaptData=adaptationData(rawExpData.metaData,rawExpData.subData,this);
 end
 saveloc=[];

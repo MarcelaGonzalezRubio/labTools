@@ -50,6 +50,13 @@ classdef labTimeSeries  < timeseries
                 ME=MException('labTimeSeries:ConstructorInconsistentArguments','The size of the labels array is inconsistent with the data being provided.');
                 throw(ME)
             end
+            %Check for repeat labels:
+            for i=1:length(labels)
+                if sum(strcmpi(labels,labels{i}))>1
+                    ME=MException('labTimeSeries:ConstructorRepeatedLabels','Two labels provided are the same (caps don''t matter).');
+                    throw(ME)
+                end
+            end
         end
         
         %-------------------
@@ -403,7 +410,6 @@ classdef labTimeSeries  < timeseries
                 warning('labTimeSeries:substituteNaNs','timeseries contains at least one label that is all NaN. Can''t replace those values (no data to use as reference), setting to 0.')
                 this.Data(:,all(isnan(this.Data)))=0;
             end
-            newData=zeros(size(this.Data));
             this.Quality=zeros(size(this.Data),'int8');
              for i=1:size(this.Data,2) %Going through labels
                  auxIdx=~isnan(this.Data(:,i)); %Finding indexes for non-NaN data under this label
@@ -587,6 +593,7 @@ classdef labTimeSeries  < timeseries
         
         function [alignedTS,originalDurations]=stridedTSToAlignedTS(stridedTS,N) %Need to correct this, so it aligns by all events, as opposed to just aligning the initial time-point
             %To be used after splitByEvents
+            if numel(stridedTS)~=0
             if ~islogical(stridedTS{1}.Data)
                 aux=zeros(sum(N),size(stridedTS{1}.Data,2),size(stridedTS,1));
             else
@@ -616,6 +623,10 @@ classdef labTimeSeries  < timeseries
                 end
             end
             alignedTS=alignedTimeSeries(0,1/sum(N),aux,stridedTS{1}.labels,N,cell(size(N)));
+            else
+                alignedTS=alignedTimeSeries(0,1/sum(N),zeros(0,0),[],N,cell(size(N)));
+                originalDurations=[];
+            end
         end
         
         function [figHandle,plotHandles]=plotStridedTimeSeries(stridedTS,figHandle,plotHandles)
@@ -649,3 +660,4 @@ classdef labTimeSeries  < timeseries
     
         
 end
+

@@ -129,7 +129,7 @@ classdef adaptationData
         end
         
         %Other I/O functions:
-        function labelList=getParameterList(this)
+        function [labelList,descriptionList]=getParameterList(this)
         %obtain an array of strings with the labels of the all parameters
         %INPUT:
         %this: experimentData object
@@ -139,6 +139,7 @@ classdef adaptationData
         %
         %EX: labelList=adaptData.getParameters;
             labelList=this.data.labels;
+            descriptionList=this.data.description;
         end
         
         function [data,inds,auxLabel]=getParamInTrial(this,label,trial)
@@ -299,9 +300,6 @@ classdef adaptationData
 		%
 		%EX:[veryEarlyPoints,earlyPoints,latePoints]=adaptData.getEarlyLateData({'Sout'},{'TM base'},1,5,40,5);
 		
-			earlyPoints=[];
-            veryEarlyPoints=[];
-            latePoints=[];
             N1=3;%all(cellfun(@(x) isa(x,'char'),conds))
             if isa(conds,'char')
                 conds={conds};
@@ -333,43 +331,50 @@ classdef adaptationData
             else
                 %this=adaptData;
             end
-            conditionIdxs=this.getConditionIdxsFromName(conds);
-            for i=1:nConds
-                %First: find if there is a condition with a
-                %similar name to the one given
-                condIdx=conditionIdxs(i);
-                aux=this.getParamInCond(labels,conditionIdxs(i));
-                if ~isempty(condIdx) && ~isempty(aux)
-                    %First N1 points
-                    try %Try to get the first strides, if there are enough
-                        veryEarlyPoints(i,:,:)=aux(1:N1,:);
-                    catch %In case there aren't enough strides, assign NaNs to all
-                        veryEarlyPoints(i,:,:)=NaN;
-                    end
-                    
-                    %First N2 points
-                    try %Try to get the first strides, if there are enough
-                        earlyPoints(i,:,:)=aux(1:N2,:);
-                    catch %In case there aren't enough strides, assign NaNs to all
-                        earlyPoints(i,:,:)=NaN;
-                    end
-
-                    %Last N3 points, exempting very last Ne
-                    try                                    
-                        latePoints(i,:,:)=aux(end-N3-Ne+1:end-Ne,:);
-                    catch
-                        latePoints(i,:,:)=NaN;
-                    end
-                else
-                    disp(['Condition ' conds{i} ' not found for subject ' this.subData.ID])
-                    veryEarlyPoints(i,1:N1,:)=NaN;
-                    earlyPoints(i,1:N2,:)=NaN;
-                    latePoints(i,1:N3,:)=NaN;
-                end
-            end
+            [dataPoints]=getEarlyLateData_v2(this,labels,conds,0,[N1,N2,-N3],Ne,0);
+            veryEarlyPoints=dataPoints{1};
+            earlyPoints=dataPoints{2};
+            latePoints=dataPoints{3};
+            warning('adaptationData:getEarlyLateData','This function is being deprecated, use getEarlyLateDatav2 instead')
+            %Pablo deprecated on June 24th, 2015:
+%             conditionIdxs=this.getConditionIdxsFromName(conds);
+%             for i=1:nConds
+%                 %First: find if there is a condition with a
+%                 %similar name to the one given
+%                 condIdx=conditionIdxs(i);
+%                 aux=this.getParamInCond(labels,conditionIdxs(i));
+%                 if ~isempty(condIdx) && ~isempty(aux)
+%                     %First N1 points
+%                     try %Try to get the first strides, if there are enough
+%                         veryEarlyPoints(i,:,:)=aux(1:N1,:);
+%                     catch %In case there aren't enough strides, assign NaNs to all
+%                         veryEarlyPoints(i,:,:)=NaN;
+%                     end
+%                     
+%                     %First N2 points
+%                     try %Try to get the first strides, if there are enough
+%                         earlyPoints(i,:,:)=aux(1:N2,:);
+%                     catch %In case there aren't enough strides, assign NaNs to all
+%                         earlyPoints(i,:,:)=NaN;
+%                     end
+% 
+%                     %Last N3 points, exempting very last Ne
+%                     try                                    
+%                         latePoints(i,:,:)=aux(end-N3-Ne+1:end-Ne,:);
+%                     catch
+%                         latePoints(i,:,:)=NaN;
+%                     end
+%                 else
+%                     disp(['Condition ' conds{i} ' not found for subject ' this.subData.ID])
+%                     veryEarlyPoints(i,1:N1,:)=NaN;
+%                     earlyPoints(i,1:N2,:)=NaN;
+%                     latePoints(i,1:N3,:)=NaN;
+%                 end
+%             end
         end
         
         function [baseValues,baseTypes]=getBias(this,conditions)
+            warning('adaptationData:getBias','This function is not yet implemented.')
             baseValues=[];
             baseTypes=[];
         end
@@ -392,10 +397,14 @@ classdef adaptationData
             end
             inds={};
             for i=1:length(conditionIdxs)
-                %Get trials in each condition:
-                trials=cell2mat(this.metaData.trialsInCondition(conditionIdxs(i)));
-                %Now, get inds in each trial:
-                inds{i}=cell2mat(this.data.indsInTrial(trials));
+                if ~isnan(conditionIdxs)
+                    %Get trials in each condition:
+                    trials=cell2mat(this.metaData.trialsInCondition(conditionIdxs(i)));
+                    %Now, get inds in each trial:
+                    inds{i}=cell2mat(this.data.indsInTrial(trials));
+                else
+                    inds{i}=[];
+                end
             end
         end
         
@@ -405,125 +414,32 @@ classdef adaptationData
         
         %Display functions:
         function figHandle=plotParamTimeCourse(this,label,runningBinSize,trialMarkerFlag,conditions)
-        %Plot of the behaviour of parameters through the different conditions 
-        %specify the parameter behaviour on each condition and trial
-        %
-        %INPUTS:
-		%this:experimentData object 
-		%label: parameters to plot 
-		%runningBinSize: number of data points to considered to make an average 
-		%trialMarkerFlag: 1 to identify the different trials that compose a single condition. 
-		%
-		%OUTPUT:
-		%figHandle: number of the figure where is the plot 	
-		%
-		%EX: adaptData.plotParamTimeCourse('spatialContribution',2,1)
-
+                    %Plot of the behaviour of parameters through the different conditions 
+            %specify the parameter behaviour on each condition and trial
+            %
+            %INPUTS:
+            %this:experimentData object 
+            %label: parameters to plot 
+            %runningBinSize: number of data points to considered to make an average 
+            %trialMarkerFlag: 1 to identify the different trials that compose a single condition. 
+            %
+            %OUTPUT:
+            %figHandle: number of the figure where is the plot 	
+            %
+            %EX: adaptData.plotParamTimeCourse('spatialContribution',2,1)
             if isa(label,'char')
                 label={label};
             end
-            
-            [ah,figHandle]=optimizedSubPlot(length(label),4,1); %this changes default color order of axes
-            
+            if nargin<4 || isempty(trialMarkerFlag)
+                trialMarkerFlag=0;
+            end
+            if nargin<3 || isempty(runningBinSize)
+                runningBinSize=1; 
+            end
             if nargin<5 || isempty(conditions)
-                conds=find(~cellfun(@isempty,this.metaData.conditionName));
-            else
-                conds=this.metaData.getConditionIdxsFromName(conditions);
-                conds=conds(~isnan(conds));
+                conditions=this.metaData.conditionName;
             end
-            this = this.removeBadStrides;
-            this = this.removeBias;
-            nConds=length(conds);
-            nPoints=size(this.data.Data,1);
-            for l=1:length(label)
-                dataPoints=NaN(nPoints,nConds);
-                trialBreaks=[];
-                for i=1:nConds
-                    trials=this.metaData.trialsInCondition{conds(i)};
-                    if ~isempty(trials)
-                        for t=trials
-                            inds=this.data.indsInTrial(t);
-                            dataPoints(inds{1},i)=this.getParamInTrial(label(l),t);
-                            if ~isempty(inds{1})
-                                trialBreaks(end+1)=inds{1}(end);
-                            end
-                        end
-                    end
-                end
-                if nargin>2 && ~isempty(runningBinSize)
-                    movingDataPoints=medfilt1(dataPoints,runningBinSize,[],1);
-                    movingStds=sqrt(conv2(dataPoints.^2,ones(runningBinSize,1)/runningBinSize,'same')-conv2(dataPoints,ones(runningBinSize,1)/runningBinSize,'same').^2);
-                    movingStds=sqrt(conv2((movingDataPoints-conv2(movingDataPoints,ones(runningBinSize,1)/runningBinSize,'same')).^2,ones(runningBinSize,1)/runningBinSize,'same'));
-                    axes(ah(l))
-                    hLeg=plot(ah(l),movingDataPoints,'.','MarkerSize',15);
-                    for i=1:nConds
-                        aux1=movingDataPoints(:,i);
-                        aux2=movingStds(:,i);
-                        xCoord=[1:length(aux1),length(aux1):-1:1];
-                        yCoord=[aux1'-aux2',aux1(end:-1:1,:)'+aux2(end:-1:1,:)'];
-                        xCoord=xCoord(~isnan(yCoord));
-                        yCoord=yCoord(~isnan(yCoord));
-                        hh=patch(repmat(xCoord',1,size(aux1,2)),yCoord',[.7,.7,.7],'EdgeColor','None');
-                        uistack(hh,'bottom')
-                    end
-                    maxM=max(movingDataPoints(:)+movingStds(:));
-                    minM=min(movingDataPoints(:)-movingStds(:));
-                else
-                    hLeg=plot(ah(l),dataPoints,'.','MarkerSize',15);
-                    maxM=max(dataPoints(:));
-                    minM=min(dataPoints(:));
-                end
-                if nargin>3 && trialMarkerFlag==1 %Color background with trial info
-                    axes(ah(l))
-                    last=1;
-                    colorNow=[0,0,0];
-                    for i=1:length(trialBreaks)
-                        colorNow=1-colorNow;
-                        hh=patch([last trialBreaks(i) trialBreaks(i) last],[minM*[1,1] , maxM*[1,1]],1-.05*colorNow,'EdgeColor','None');
-                        uistack(hh,'bottom')
-                        last=trialBreaks(i);
-                    end
-                end
-                title(ah(l),[label{l},' (',this.subData.ID ')'])
-                axis tight
-            end
-            condDes = this.metaData.conditionName;
-            legend(hLeg,condDes(conds)); %this is for the case when a condition number was skipped
-            linkaxes(ah,'x')
-            %axis tight
-        end
-        
-        function figHandle=plotParamTrialTimeCourse(this,label)
-            warning('adaptationData.plotParamTrialTimeCourse has been deprecated. Try instead to use plotParamTimeCourse with the trialMarkerFlag set (=1)')
-%             [ah,figHandle]=optimizedSubPlot(length(label),4,1);            
-%             
-%             nTrials=length(cell2mat(this.metaData.trialsInCondition));
-%             trials=find(~cellfun(@isempty,this.data.trialTypes));
-%             nPoints=size(this.data.Data,1);
-%             
-%             for l=1:length(label)
-%                 dataPoints=NaN(nPoints,nTrials);
-%                 for i=1:nTrials
-%                     inds=this.data.indsInTrial{trials(i)};
-%                     dataPoints(inds,i)=this.getParamInTrial(label(l),trials(i));
-%                 end
-%                 plot(ah(l),dataPoints,'.','MarkerSize',15)
-%                 title(ah(l),[label{l},' (',this.subData.ID ')'])
-%             end
-%             
-%             trialNums = cell2mat(this.metaData.trialsInCondition);
-%             legendEntry={};
-%             for i=1:length(trialNums)
-%                 legendEntry{end+1}=num2str(trialNums(i));
-%             end
-%             legend(legendEntry);
-%             linkaxes(ah,'x')
-%             axis tight
-        end
-        
-        function figHandle=plotParamByConditions(this,label)
-            warning('adaptationData.plotParamByConditions will be deprecated. Use plotParamBarsByConditions instead.')
-            figHandle=plotParamBarsByConditions(this,label);
+            figHandle=adaptationData.plotAvgTimeCourse({this},label(:)',conditions,runningBinSize,trialMarkerFlag);
         end
         
         function figHandle=scatterPlot(this,labels,conditionIdxs,figHandle,marker,binSize,trajectoryColor,removeBias,addID)
@@ -615,6 +531,10 @@ classdef adaptationData
            end
            hold off     
         end
+        
+        [dataPoints]=getEarlyLateData_v2(this,labels,conds,removeBiasFlag,numberOfStrides,exemptLast,exemptFirst)
+        
+        [figHandle]=plotParamBarsByConditionsv2(this,label,number,exemptLast,exemptFirst,condList,mode);
     end
     
     
@@ -627,46 +547,73 @@ classdef adaptationData
         
         [figHandle,allData]=plotGroupedSubjectsBars(adaptDataList,label,removeBiasFlag,plotIndividualsFlag,condList,earlyNumber,lateNumber,exemptLast,legendNames,significanceThreshold)
         
-        varargout=plotAvgTimeCourse(adaptDataList,params,conditions,binwidth,trialMarkerFlag,indivFlag,biofeedback,indivSubs)
+        varargout=plotAvgTimeCourse(adaptDataList,params,conditions,binwidth,trialMarkerFlag,indivFlag,indivSubs,colorOrder,biofeedback,removeBiasFlag,groups)
+        
+        function groupData=createGroupAdaptData(adaptDataList)
+            %Check that it is a single cell array of chars (subIDs):
+            
+            %Load and construct object:
+            for i=1:length(adaptDataList)
+                a=load(adaptDataList{i});
+                data{i}=a.('adaptData');
+                ID{i}=a.('adaptData').subData.ID;
+            end
+            groupData=groupAdaptationData(ID,data);
+        end
 
         function [veryEarlyPoints,earlyPoints,latePoints,pEarly,pLate,pChange,pSwitch]=getGroupedData(adaptDataList,label,conds,removeBiasFlag,earlyNumber,lateNumber,exemptLast)
-            earlyPoints=[];
-            veryEarlyPoints=[];
-            latePoints=[];
+            
             if ~(isa(label,'char') || (isa(label,'cell') && length(label)==1 && (isa(label{1},'char'))))
-                error('adaptationData:getGroupedData','Only one parameter can be retrieved at a time.');
+                error('adaptationData:getGroupedData','Only one parameter can be retrieved at a time.'); %This is NOT true (?). Fix.
             end
-            for subject=1:length(adaptDataList) %Getting data for each subject in the list
-                a=load(adaptDataList{subject});
-                aux=fields(a);
-                this=a.(aux{1});
-                nConds=length(conds);
-                nLabs=length(label);
-                [veryEarlyPoints(1:nConds,:,1:nLabs,subject),earlyPoints(1:nConds,1:earlyNumber,1:nLabs,subject),latePoints(1:nConds,1:lateNumber,1:nLabs,subject)]=getEarlyLateData(this,label,conds,removeBiasFlag,earlyNumber,lateNumber,exemptLast);
-            %Indexes in data correspond to: condition, stride,label,subject
-            end
-            %Compute some stats
-            aux1=squeeze(nanmean(earlyPoints,2)); %Averaging across strides
-            aux2=squeeze(nanmean(latePoints,2));
-            pSwitch=[];
-            for i=1:size(aux1,1) %For all conditions requested
-                for j=1:size(aux1,1)
-                    if i~=j
-                        [~,pEarly(i,j)] =ttest(aux1(i,:),aux1(j,:)); %Testing early points across all conds
-                        [~,pLate(i,j)] =ttest(aux2(i,:),aux2(j,:)); %Testing late points across all conds
-                    else
-                        pEarly(i,j)=NaN;
-                        pLate(i,j)=NaN;
+            
+            %Create a groupAdaptationData object and use it to get the
+            %requested data in matrix form:
+            groupData=createGroupAdaptData(adaptDataList);
+            [data]=groupData.getGroupedData(label,conds,removeBiasFlag,[3,earlyNumber,-lateNumber],0,exemptLast);
+            earlyPoints=data{2};
+            veryEarlyPoints=data{1};
+            latePoints=data{3};
+            
+            %Compute some stats (this may only work properly if length(label)==1)
+            if length(label)>1
+                pEarly=[];
+                pLate=[];
+                pChange=[];
+                pSwitch=[];
+            else
+                aux1=squeeze(nanmean(earlyPoints,2)); %Averaging across strides
+                aux2=squeeze(nanmean(latePoints,2));
+                pSwitch=[];
+                for i=1:size(aux1,1) %For all conditions requested
+                    for j=1:size(aux1,1)
+                        if i~=j
+                            [~,pEarly(i,j)] =ttest(aux1(i,:),aux1(j,:)); %Testing early points across all conds
+                            [~,pLate(i,j)] =ttest(aux2(i,:),aux2(j,:)); %Testing late points across all conds
+                        else
+                            pEarly(i,j)=NaN;
+                            pLate(i,j)=NaN;
+                        end
                     end
-                end
-                [~,pChange(i)]=ttest(aux1(i,:),aux2(i,:)); %Testing changes within each condition
-                if i>1
-                    [~,pSwitch(i-1)]=ttest(aux2(i-1,:),aux1(i,:)); %Testing changes from end of one condition to start of the next
+                    [~,pChange(i)]=ttest(aux1(i,:),aux2(i,:)); %Testing changes within each condition
+                    if i>1
+                        [~,pSwitch(i-1)]=ttest(aux2(i-1,:),aux1(i,:)); %Testing changes from end of one condition to start of the next
+                    end
                 end
             end
         end
           
         function figHandle=groupedScatterPlot(adaptDataList,labels,conditionIdxs,binSize,figHandle,trajColors,removeBias)
+            
+            if isa(adaptDataList,'cell')
+                if ~isa(adaptDataList{1},'cell')
+                    adaptDataList{1}=adaptDataList;
+                end
+            elseif isa(adaptDataList,'char')
+                adaptDataList{1}={adaptDataList};
+            end
+            Ngroups=length(adaptDataList);
+            
             if nargin<7 || isempty(removeBias)
                 removeBias=0;
             end
@@ -683,30 +630,34 @@ classdef adaptationData
             if nargin<4 || isempty(binSize)
                 binSize=[];
             end
-            for i=1:length(adaptDataList)
-                r=(i-1)/(length(adaptDataList)-1);
-                if nargin<6 || isempty(trajColors)
-                    trajColor=[1,0,0] + r*[-1,0,1];
-                elseif iscell(trajColors)
-                    trajColor=trajColors{i};
-                elseif size(trajColors,2)==3
-                    trajColor=trajColors(mod(i,size(trajColors,1))+1,:);
-                else
-                    warning('Could not interpret trajecColors input')
-                    trajColor='k';
+            for g=1:Ngroups
+                for i=1:length(adaptDataList(g))
+                    r=(i-1)/(length(adaptDataList{g})-1);
+                    if nargin<6 || isempty(trajColors)
+                        trajColor=[1,0,0] + r*[-1,0,1];
+                    elseif iscell(trajColors)
+                        trajColor=trajColors{i};
+                    elseif size(trajColors,2)==3
+                        trajColor=trajColors(mod(i,size(trajColors,1))+1,:);
+                    else
+                        warning('Could not interpret trajecColors input')
+                        trajColor='k';
+                    end
+                    a=load(adaptDataList{g}{i});
+                    fieldList=fields(a);
+                    this=a.(fieldList{1});
+                    if iscell(conditionIdxs) %This gives the possibility to pass condition names instead of the indexes for each subject, which might be different
+                        conditionIdxs1=getConditionIdxsFromName(this,conditionIdxs);
+                    else
+                        conditionIdxs1=conditionIdxs;
+                    end
+                    figHandle=scatterPlot(this,labels,conditionIdxs1,figHandle,markerList{mod(i,length(markerList))+1},binSize,trajColor,removeBias,1);
                 end
-                a=load(adaptDataList{i});
-                fieldList=fields(a);
-                this=a.(fieldList{1});
-                if iscell(conditionIdxs) %This gives the possibility to pass condition names instead of the indexes for each subject, which might be different
-                    conditionIdxs1=getConditionIdxsFromName(this,conditionIdxs);
-                else
-                    conditionIdxs1=conditionIdxs;
-                end
-                figHandle=scatterPlot(this,labels,conditionIdxs1,figHandle,markerList{mod(i,length(markerList))+1},binSize,trajColor,removeBias,1);
             end
             
         end
+        
+        [figHandle,allData]=plotGroupedSubjectsBarsv2(adaptDataList,label,removeBiasFlag,plotIndividualsFlag,condList,numberOfStrides,exemptFirst,exemptLast,legendNames,significanceThreshold)
     end %static methods
     
 end

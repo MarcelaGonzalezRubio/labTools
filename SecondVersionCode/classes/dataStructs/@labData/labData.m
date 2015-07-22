@@ -214,7 +214,7 @@ classdef labData
             end
             
             %6) Get COP, COM and joint torque data.
-            [jointMomentsData,COPData,COMData] = TorqueCalculator(this);
+            [jointMomentsData,COPData,COMData] = TorqueCalculator(this, subData.weight);
             
             % 7) Generate processedTrial object
             processedData=processedTrialData(this.metaData,this.markerData,filteredEMGData,this.GRFData,this.beltSpeedSetData,this.beltSpeedReadData,this.accData,this.EEGData,this.footSwitchData,events,procEMGData,angleData,COPData,COMData,jointMomentsData);
@@ -225,6 +225,55 @@ classdef labData
             
             
             
+        end
+        
+        function checkMarkerDataHealth(this)
+            ts=this.markerData;
+            %Check for missing samples (and do nothing?):
+            ll=ts.getLabelPrefix;
+            dd=ts.getOrientedData;
+            for i=1:length(ll)
+                l=ll{i};
+                aux=any(isnan(dd(:,i,:)),3);
+                if any(aux)
+                    warning('labData:checkMarkerDataHealth',['Marker ' l ' is missing for ' num2str(sum(aux)*ts.sampPeriod) ' secs.'])
+                    for j=1:3
+                        dd(aux,i,j)=nanmean(dd(:,i,j)); %Filling gaps just for healthCheck purposes
+                    end
+                end
+            end
+            
+            %Check for outliers:
+            %Do a data translation:
+            %refMarker=squeeze(mean(ts.getOrientedData({'LHIP','RHIP'}),2)); %Assuming these markers exist
+            %Do a label-agnostic data translation:
+            refMarker=squeeze(nanmean(dd,2));
+            newTS=ts.translate([-refMarker(:,1:2),zeros(size(refMarker,1),1)]); %Assuming z is a known fixed axis
+            %Not agnostic rotation:
+            %relData=squeeze(markerData.getOrientedData('RHIP'));
+            %Label agnostic data rotation:
+            newTS=newTS.alignRotate([refMarker(:,2),-refMarker(:,1),zeros(size(refMarker,1),1)],[0,0,1]);
+            medianTS=newTS.median; %Gets the median skeleton of the markers
+            
+            %With this median skeleton, a minimization can be done to find
+            %another label agnostic data rotation that does not depend on
+            %estimating the translation velocity:
+            
+            %Another attempt at label agnostic rotation (not using
+            %velocity, but actually some info about the skeleton having
+            %Left and Right)
+            %l1=cellfun(@(x) x(1:end-1),ts.getLabelsThatMatch('^L'),'UniformOutput',false);
+            %l2=cellfun(@(x) x(1:end-1),ts.getLabelsThatMatch('^R'),'UniformOutput',false);
+            %relDataOTS=newTS.computeDifferenceOTS([],[],l1(1:3:end),l2(1:3:end));
+            %relData=squeeze(nanmedian(relDataOTS.getOrientedData,2)); %Need to work on this
+            
+            
+                      
+            %Try to fit a 2-cluster model, to see if some marker labels are
+            %switched at some point during experiment
+            
+            %Assuming single mode/cluster, find outliers by getting stats
+            %on distribution of positions/distance and velocities.
         end
         
         function newThis=split(this,t0,t1,newClass) %Returns an object of the same type, unless newClass is specified (it needs to be a subclass)
@@ -241,7 +290,7 @@ classdef labData
             auxLst=properties(cname);
             for i=1:length(auxLst)
                 eval(['oldVal=this.' auxLst{i} ';']) %Should try to do this only if the property is not dependent, otherwise, I'm computing things I don't need
-                if isa(oldVal,'labTimeSeries') && ~strcmpi(auxLst{i},'adaptParams')
+                if isa(oldVal,'labTimeSeries') && ~isa(oldVal,'parameterSeries')
                     newVal=oldVal.split(t0,t1); %Calling labTS.split (or one of the subclass' implementation)
                 elseif ~isa(oldVal,'labMetaData')
                     newVal=oldVal; %Not a labTS object, not splitting
@@ -277,3 +326,4 @@ classdef labData
     
     
 end
+

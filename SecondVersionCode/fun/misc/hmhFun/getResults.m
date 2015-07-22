@@ -58,7 +58,7 @@ results.Washout2.se=[];
 for g=1:ngroups
     
     % get subjects in group
-    subjects=SMatrix.(groups{g}).IDs(:,1);
+    subjects=SMatrix.(groups{g}).ID;
     
     OGbase=[];
     TMbase=[];
@@ -77,19 +77,17 @@ for g=1:ngroups
         
     for s=1:length(subjects)
         % load subject
-        load([subjects{s} 'params.mat'])       
+        adaptData=SMatrix.(groups{g}).adaptData{s};      
         
         % remove baseline bias
         adaptData=adaptData.removeBadStrides;
-        adaptData=adaptData.removeBias; 
-        
+        adaptData=adaptData.removeBias;        
         
          if nargin>3 && maxPerturb==1             
                        
             % compute TM and OG base in same manner as calculating OG after and TM after
             stepAsymData=adaptData.getParamInCond('stepLengthAsym','OG base');
             OGbaseData=adaptData.getParamInCond(params,'OG base');
-%             OGbase=[OGbase; smoothedMax(OGbaseData(1:10,:),10,stepAsymData(1:10))];
             OGbase=[OGbase; smoothedMax(OGbaseData(1:10,:),transientNumPts,stepAsymData(1:10))];
 
             stepAsymData=adaptData.getParamInCond('stepLengthAsym','TM base');
@@ -180,15 +178,15 @@ for g=1:ngroups
     end   
     
     %calculate relative after-effects
-%     transfer=[transfer; 100*(ogafter./(tmcatch))];
+
 %     transfer=[transfer; 100*(ogafter./(tmcatch(:,3)*ones(1,3)))];
-
-
-%     transfer=[transfer; 100*(ogafter./(tmCatch))];
-%     washout=[washout; 100-(100*(tmafter./tmCatch))];
- 
-    transfer=[transfer; 100*bsxfun(@rdivide,ogafter,(tmCatch(:,4)))];
-    washout=[washout; 100-(100*bsxfun(@rdivide,tmafter,tmCatch(:,4)))];
+    idx = find(strcmp(params, 'stepLengthAsym'));
+    if ~isempty(idx)
+        transfer=[transfer; 100*(ogafter./(tmCatch(:,idx)*ones(1,length(params))))];
+    else
+        transfer=[transfer; 100*(ogafter./tmCatch)];
+    end
+    washout=[washout; 100-(100*(tmafter./tmCatch))];
 
     transfer2=[transfer2; 100*(ogafter./tmsteady)];
     washout2=[washout2; 100-(100*(tmafter./tmsteady))];
@@ -237,7 +235,7 @@ for g=1:ngroups
     results.Washout2.avg(end+1,:)=nanmean(washout2,1);
     results.Washout2.se(end+1,:)=nanstd(washout2,1)./sqrt(nSubs);
     
-    if g==1 %This seems ridiculous, but I don't know of another way to do it without making MATLAB mad. The results.(whatever) structure needs to be in this format to make life easier for using SPSS
+    if g==1 %This seems ridiculous, but I don't know of another way to do it without making MATLAB mad. The results.(whatever).indiv structure needs to be in this format to make life easier for using SPSS
         for p=1:length(params)        
             results.OGbase.indiv.(params{p})=[g*ones(nSubs,1) OGbase(:,p)];
             results.TMbase.indiv.(params{p})=[g*ones(nSubs,1) TMbase(:,p)];
@@ -308,26 +306,28 @@ end
 if nargin>4 && plotFlag
     
     % FIRST: plot baseline values against catch and transfer
-    epochs={'OGafter'};
+    epochs={'TMsteady','catch','OGafter','TMafter'};
     if nargin>5 %I imagine there has to be a better way to do this...
         barGroups(SMatrix,results,groups,params,epochs,indivFlag)
     else
         barGroups(SMatrix,results,groups,params,epochs)
     end
     
-    % SECOND: plot average adaptation values?
+%     % SECOND: plot average adaptation values?
 %     epochs={'AvgAdaptBeforeCatch','TMsteadyBeforeCatch','AvgAdaptAll','TMsteady'};
 %     if nargin>5 
 %         barGroups(SMatrix,results,groups,params,epochs,indivFlag)
 %     else
 %         barGroups(SMatrix,results,groups,params,epochs)
 %     end   
-%     
-%       epochs={'Transfer'};
+
+%     % SECOND: plot average adaptation values?
+%     epochs={'AvgAdaptAll','TMsteady','catch','Transfer'};
 %     if nargin>5 
 %         barGroups(SMatrix,results,groups,params,epochs,indivFlag)
 %     else
 %         barGroups(SMatrix,results,groups,params,epochs)
 %     end   
-
 end
+
+
