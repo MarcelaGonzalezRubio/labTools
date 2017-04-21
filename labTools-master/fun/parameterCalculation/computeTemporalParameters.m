@@ -1,5 +1,6 @@
 function [out] = computeTemporalParameters(strideEvents)
 %%
+%hello
 timeSHS=strideEvents.tSHS;
 timeFTO=strideEvents.tFTO;
 timeFHS=strideEvents.tFHS;
