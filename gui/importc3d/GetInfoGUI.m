@@ -1,17 +1,15 @@
 function varargout = GetInfoGUI(varargin)
 % GetInfoGUI  GUI for collecting experimental session information.
 %
-%   Launches a graphical user interface to gather all information
-%   regarding a single experiment conducted in the Sensorimotor
-%   Learning Laboratory. Fields include participant demographics,
-%   experiment metadata, data file locations, trial and condition
-%   assignments, and EMG channel labels. Refer to the in-GUI help
-%   text (hover over any field) for field-specific guidance.
+%   Launches a graphical user interface to gather all information regarding
+% a single experiment conducted in the Sensorimotor Learning Laboratory.
+% Fields include participant demographics, experiment metadata, data file
+% locations, trial and condition assignments, and EMG channel labels. Refer
+% to in-GUI help text (hover over any field) for field-specific guidance.
 %
 %   Outputs:
-%     info - Struct containing all session information entered by
-%            the user, or empty ([]) if the GUI was closed without
-%            saving.
+%     info - Struct containing all session information entered by the user,
+%            or empty ([]) if the GUI was closed without saving.
 %
 %   Toolbox Dependencies:
 %     None
@@ -65,8 +63,7 @@ scrsz  = get(0, 'ScreenSize');
 set(gcf(), 'Units', 'pixels');
 guiPos = get(hObject, 'Position');
 set(hObject, 'Position', [ ...
-    (scrsz(3) - guiPos(3)) / 2, ...
-    (scrsz(4) - guiPos(4)) / 2, ...
+    (scrsz(3) - guiPos(3)) / 2, (scrsz(4) - guiPos(4)) / 2, ...
     guiPos(3), guiPos(4)]);
 
 % Set tooltip strings displayed when hovering over GUI fields.
@@ -135,12 +132,12 @@ function varargout = GetInfoGUI_OutputFcn(hObject, eventdata, handles)
 %     varargout{1} - info struct populated by the user, or [] if the
 %                    GUI was closed without saving
 
-if ~(isfield(handles, 'noSave') && handles.noSave)
+if ~(isfield(handles, 'bypassOutputFcn') && handles.bypassOutputFcn)
     info = handles.info;
 
-    % Force save immediately so data is preserved if later steps fail
-    infoFilePath = [info.save_folder filesep info.ID 'info.mat'];
-    if exist(infoFilePath, 'file') > 0
+    % Check for an existing file; offer rename if user declines overwrite
+    infoFilePath = fullfile(info.save_folder, [info.ID 'info.mat']);
+    if isfile(infoFilePath)
         choice = questdlg( ...
             ['Info file (and possibly others) already exist for ' ...
             info.ID '. Overwrite?'], ...
@@ -151,20 +148,22 @@ if ~(isfield(handles, 'noSave') && handles.noSave)
             waitfor(h);
         end
     end
-    save([info.save_folder filesep info.ID 'info'], 'info');
+
+    % Compute save path after potential ID modification, then force-save
+    % immediately so data is preserved if later steps fail
+    infoSavePath = fullfile(info.save_folder, [info.ID 'info']);
+    save(infoSavePath, 'info');
 
     % Prompt user for individual trial observations
     answer = inputdlg( ...
-        'Are there any observations for individual trials?(y/n) ', ...
-        's');
+        'Are there any observations for individual trials? (y/n): ', 's');
 
     % Validate response — must be a single 'y' or 'n'
     while length(answer{1}) > 1 || ...
             (~strcmpi(answer{1}, 'y') && ~strcmpi(answer{1}, 'n'))
         disp('Error: you must enter either "y" or "n"');
         answer = inputdlg( ...
-            'Are there any observations for individual trials?(y/n) ', ...
-            's');
+            'Are there any observations for individual trials?(y/n) ','s');
     end
 
     % Pre-allocate trial observation cell array if needed
@@ -177,29 +176,23 @@ if ~(isfield(handles, 'noSave') && handles.noSave)
     end
 
     if strcmpi(answer{1}, 'y')
-        trialstr = [];
-        % Build comma-separated trial string for the eval menu call
-        for t = expTrials
-            trialstr = [trialstr, ',''Trial ', num2str(t), ''''];
-        end
-        % Generate dynamic trial selection menu
-        eval(['choice = menu(''Choose Trial''', ...
-            trialstr, ',''Done'');']);
+        % Build cell array of trial label strings for menu display
+        trialLabels = arrayfun(@(t) ['Trial ' num2str(t)], expTrials, ...
+            'UniformOutput', false);
+        % Display trial selection menu using comma expansion
+        choice = menu('Choose Trial', trialLabels{:}, 'Done');
         while choice ~= numTrials + 1
-            % Get observation for trial selected
-            obStr = inputdlg( ...
-                ['Observations for Trial ' ...
-                num2str(expTrials(choice))], ...
-                'Enter Observation');
-            % Index into cell to store contents as char
+            % Get observation for the selected trial
+            obStr = inputdlg(['Observations for Trial ' ...
+                num2str(expTrials(choice))], 'Enter Observation');
+            % Store observation string in the cell array
             info.trialObs{expTrials(choice)} = obStr{1, 1};
-            eval(['choice = menu(''Choose Trial''', ...
-                trialstr, ',''Done'');']);
+            choice = menu('Choose Trial', trialLabels{:}, 'Done');
         end
     end
 
     varargout{1} = info;
-    save([info.save_folder filesep info.ID 'info'], 'info');
+    save(infoSavePath, 'info');
 else
     varargout{1} = [];
 end
@@ -217,18 +210,17 @@ function figure1_CloseRequestFcn(hObject, eventdata, handles)
 %     handles   - struct with handles and user data (see GUIDATA)
 
 choice = questdlg('Do you want to save changes?', ...
-    'GetInfoGUI', ...
-    'Save', 'Don''t Save', 'Cancel', 'Cancel');
+    'GetInfoGUI', 'Save', 'Don''t Save', 'Cancel', 'Cancel');
 switch choice
     case 'Save'
-        % Validate and save whatever was entered
+        % Save directly here; OutputFcn workflow will be bypassed
         info = errorProofInfo(handles, true);
-        save([info.save_folder filesep info.ID 'info'], 'info');
-        handles.noSave = true;
+        save(fullfile(info.save_folder, [info.ID 'info']), 'info');
+        handles.bypassOutputFcn = true;
         guidata(hObject, handles);
         uiresume(handles.figure1);
     case 'Don''t Save'
-        handles.noSave = true;
+        handles.bypassOutputFcn = true;
         guidata(hObject, handles);
         uiresume(handles.figure1);
     case {'Cancel', ''}
@@ -251,11 +243,9 @@ function description_edit_Callback(hObject, eventdata, handles)
 contents = cellstr(get(hObject, 'String'));
 expFile  = contents{get(hObject, 'Value')};
 
-% HH 6/16
-% eval(expFile);
 detailsPath = which('GetInfoGUI');
 detailsPath = strrep(detailsPath, 'GetInfoGUI.m', 'ExpDetails');
-if exist([detailsPath filesep expFile '.mat'], 'file') > 0
+if isfile(fullfile(detailsPath, [expFile '.mat']))
     % First, clear all condition fields
     set(handles.numofconds, 'String', '0');
     for conds = 1:handles.lines
@@ -267,8 +257,8 @@ if exist([detailsPath filesep expFile '.mat'], 'file') > 0
     end
 
     % Second, populate fields from the selected experiment description
-    a      = load([detailsPath filesep expFile]);
-    aux    = fields(a);
+    a      = load(fullfile(detailsPath, expFile));
+    aux    = fieldnames(a);
     expDes = a.(aux{1});
     handles = setExpDescription(handles, expDes);
     numofconds_Callback(handles.numofconds, eventdata, handles);
@@ -276,8 +266,8 @@ end
 
 guidata(hObject, handles);
 
-% These functions execute during object creation, after all
-% properties have been set.
+% These functions execute during object creation
+% after all properties have been set.
 % Hint: controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
 function description_edit_CreateFcn(hObject, eventdata, handles)
@@ -389,7 +379,6 @@ function schenleyLab_Callback(hObject, eventdata, handles)
 % set(handles.schenleyLab,'enable','on')
 % guidata(hObject,handles);
 
-% --- Executes on button press in schenleyLab.
 function schenleyLab_CreateFcn(hObject, eventdata, handles)
 % if ispc && isequal(get(hObject,'BackgroundColor'), ...
 %         get(0,'defaultUicontrolBackgroundColor'))
@@ -405,12 +394,12 @@ function schenleyLab_KeyPressFcn(hObject, eventdata, handles)
 %   Modifier - name(s) of any modifier keys pressed
 % handles    structure with handles and user data (see GUIDATA)
 
+% --- Executes on button press in perceptualTasks.
 function perceptualTasks_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of perceptualTasks
 % set(handles.schenleyLab,'enable','on')
 % guidata(hObject,handles);
 
-% --- Executes on button press in perceptualTasks.
 function perceptualTasks_CreateFcn(hObject, eventdata, handles)
 % if ispc && isequal(get(hObject,'BackgroundColor'), ...
 %         get(0,'defaultUicontrolBackgroundColor'))
@@ -616,7 +605,7 @@ function browse_Callback(hObject, eventdata, handles)
 %     handles   - struct with handles and user data (see GUIDATA)
 
 handles.folder_location = uigetdir();
-if ~handles.folder_location == 0
+if ischar(handles.folder_location)
     set(handles.c3dlocation, 'string', handles.folder_location);
 end
 guidata(hObject, handles);
@@ -666,7 +655,7 @@ function numoftrials_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents as text
 %        str2double(get(hObject,'String')) returns contents as double
 
-numoftrials = str2double(get(hObject, 'String'));
+numoftrials = str2double(get(hObject, 'String')); %#ok<NASGU>
 
 function numoftrials_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject, 'BackgroundColor'), ...
@@ -697,7 +686,7 @@ end
 % Second, validate the entered number
 if isnan(numofconds) || numofconds < 0 || numofconds > 20
     h_error = errordlg( ...
-        'Please enter a number between 1 and 20', ...
+        'Please enter a number of conditions between 0 and 20.', ...
         'Condition Number Error');
     waitfor(h_error);
     uicontrol(hObject);
@@ -756,11 +745,12 @@ state = get(hObject, 'Value');
 if state
     set(handles.Nexus,    'enable', 'on');
     set(handles.EMGworks, 'enable', 'on');
+    % The off-then-on sequence forces a GUI control state refresh
     for i = 1:16
-        eval(['set(handles.emg1_' num2str(i) ',''enable'',''off'');']);
-        eval(['set(handles.emg2_' num2str(i) ',''enable'',''off'');']);
-        eval(['set(handles.emg1_' num2str(i) ',''enable'',''on'');']);
-        eval(['set(handles.emg2_' num2str(i) ',''enable'',''on'');']);
+        set(handles.(['emg1_' num2str(i)]), 'enable', 'off');
+        set(handles.(['emg2_' num2str(i)]), 'enable', 'off');
+        set(handles.(['emg1_' num2str(i)]), 'enable', 'on');
+        set(handles.(['emg2_' num2str(i)]), 'enable', 'on');
     end
 else
     set(handles.Nexus,          'enable', 'off');
@@ -768,8 +758,8 @@ else
     set(handles.secfile_browse, 'enable', 'off');
     set(handles.secfileloc,     'enable', 'off');
     for i = 1:16
-        eval(['set(handles.emg1_' num2str(i) ',''enable'',''off'');']);
-        eval(['set(handles.emg2_' num2str(i) ',''enable'',''off'');']);
+        set(handles.(['emg1_' num2str(i)]), 'enable', 'off');
+        set(handles.(['emg2_' num2str(i)]), 'enable', 'off');
     end
 end
 guidata(hObject, handles);
@@ -827,7 +817,7 @@ function secfile_browse_Callback(hObject, eventdata, handles)
 %     handles   - struct with handles and user data (see GUIDATA)
 
 handles.secfolder_location = uigetdir();
-if ~handles.secfolder_location == 0
+if ischar(handles.secfolder_location)
     set(handles.secfileloc, 'string', handles.secfolder_location);
 end
 guidata(hObject, handles);
@@ -850,11 +840,10 @@ if ispc && isequal(get(hObject, 'BackgroundColor'), ...
 end
 
 % ---- EMGworks file location callbacks --------------------------
-%%%%%%%%%%%%%% DMMO for EMGworks
 % --- Executes on button press in EMGworksFile1_search.
 function EMGworksFile1_search_Callback(hObject, eventdata, handles)
 handles.EMGworksFile_Loc = uigetdir();
-if ~handles.EMGworksFile_Loc == 0
+if ischar(handles.EMGworksFile_Loc)
     set(handles.EMGworksLocation, 'string', handles.EMGworksFile_Loc);
 end
 guidata(hObject, handles);
@@ -871,7 +860,7 @@ end
 
 function SecFileSearchEMGworks_Callback(hObject, eventdata, handles)
 handles.EMGworksFile2Loc = uigetdir();
-if ~handles.EMGworksFile2Loc == 0
+if ischar(handles.EMGworksFile2Loc)
     set(handles.SecondEMGworksLocation, 'string', ...
         handles.EMGworksFile2Loc);
 end
@@ -886,10 +875,8 @@ if ispc && isequal(get(hObject, 'BackgroundColor'), ...
         get(0, 'defaultUicontrolBackgroundColor'))
     set(hObject, 'BackgroundColor', 'white');
 end
-%%%%%%%%%%%%%% DMMO for EMGworks
-%%%%%%%%%%%%%%
 
-% Hint: get(hObject,'Value') returns toggle state of EMGworks
+% Hint: get(hObject, 'Value') returns toggle state of EMGworks
 
 % ============================================================
 % ====================== Condition Info ======================
@@ -1317,7 +1304,6 @@ function type16_CreateFcn(hObject, eventdata, handles)
 % handles    empty - handles not created until after all CreateFcns called
 % Hint: edit controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
-
 if ispc && isequal(get(hObject, 'BackgroundColor'), ...
         get(0, 'defaultUicontrolBackgroundColor'))
     set(hObject, 'BackgroundColor', 'white');
@@ -1353,9 +1339,6 @@ function type17_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to type17 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-
 if ispc && isequal(get(hObject, 'BackgroundColor'), ...
         get(0, 'defaultUicontrolBackgroundColor'))
     set(hObject, 'BackgroundColor', 'white');
@@ -1391,9 +1374,6 @@ function type18_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to type18 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-
 if ispc && isequal(get(hObject, 'BackgroundColor'), ...
         get(0, 'defaultUicontrolBackgroundColor'))
     set(hObject, 'BackgroundColor', 'white');
@@ -1429,9 +1409,6 @@ function type19_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to type19 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-
 if ispc && isequal(get(hObject, 'BackgroundColor'), ...
         get(0, 'defaultUicontrolBackgroundColor'))
     set(hObject, 'BackgroundColor', 'white');
@@ -1467,9 +1444,6 @@ function type20_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to type20 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-
 if ispc && isequal(get(hObject, 'BackgroundColor'), ...
         get(0, 'defaultUicontrolBackgroundColor'))
     set(hObject, 'BackgroundColor', 'white');
@@ -1479,7 +1453,6 @@ end
 % =================== Save As / OK Button ====================
 % ============================================================
 
-% ============================================================
 % --- Executes on button press in saveExpButton.
 function saveExpButton_Callback(hObject, eventdata, handles)
 % saveExpButton_Callback  Saves the current condition configuration as
@@ -1532,7 +1505,7 @@ if ~isempty(answer)
     answer = answer(ismember(answer, ['A':'Z' 'a':'z' '0':'9']));
     detailsPath = which('GetInfoGUI');
     detailsPath = strrep(detailsPath, 'GetInfoGUI.m', 'ExpDetails');
-    if exist([detailsPath filesep answer '.mat'], 'file') > 0
+    if isfile(fullfile(detailsPath, [answer '.mat']))
         choice = questdlg( ...
             'File name already exists. Overwrite?', ...
             'File Name Warning', 'Yes', 'No', 'No');
@@ -1542,17 +1515,13 @@ if ~isempty(answer)
             return;
         end
     end
-    save([detailsPath filesep answer], 'expDes');
+    save(fullfile(detailsPath, answer), 'expDes');
     description_edit_CreateFcn(handles.description_edit, ...
         eventdata, handles);
     newContents = get(handles.description_edit, 'string');
     ind = find(ismember(newContents, answer));
     set(handles.description_edit, 'Value', ind);
 end
-
-% ============================================================
-% ------------------- Save Location / OK Button -------------
-% ============================================================
 
 function saveloc_edit_Callback(hObject, eventdata, handles)
 % saveloc_edit_Callback  Executes when save location is entered manually.
@@ -1581,7 +1550,7 @@ function save_browse_Callback(hObject, eventdata, handles)
 %     handles   - struct with handles and user data (see GUIDATA)
 
 savePath = uigetdir();
-if ~savePath == 0
+if ischar(savePath)
     handles.save_folder = savePath;
     set(handles.saveloc_edit, 'string', handles.save_folder);
 end
@@ -1618,9 +1587,9 @@ function loadButton_Callback(hObject, eventdata, handles)
 
 [file, filePath] = uigetfile('*.mat', 'Choose subject handles file');
 
-if file ~= 0
-    aux        = load([filePath file]);
-    fieldNames = fields(aux);
+if ischar(file)
+    aux        = load(fullfile(filePath, file));
+    fieldNames = fieldnames(aux);
     subInfo    = aux.(fieldNames{1});
     % TODO: check that file is correct
     if ~isa(subInfo, 'struct')

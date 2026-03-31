@@ -1,14 +1,37 @@
-function out = computeSpatialParameters(strideEvents,markerData, ...
-    angleData,s)
-%This function computes summary spatial parameters per stride
-%   This function outputs a 'parameterSeries' object, which can be
-% concatenated with other 'parameterSeries' objects, for example, with
-% those from 'computeTemporalParameters'. While this function is used for
-% spatial parameters exclusively, it should work for any 'labTS' object.
-% This function computes summary spatial parameters per stride.
+function out = computeSpatialParameters(strideEvents, markerData, ...
+    angleData, s)
+% computeSpatialParameters  Compute spatial parameters per stride.
 %
-% See also computeHreflexParameters, computeTemporalParameters,
-% computeForceParameters, parameterSeries
+%   Computes stride-by-stride spatial gait parameters and returns a
+% parameterSeries object that can be concatenated with other parameter
+% series objects (e.g., from computeTemporalParameters).
+%
+%   Inputs:
+%     strideEvents - Struct of stride-level gait event times generated
+%                    by calcParameters, with fields tSHS, tFTO, tFHS,
+%                    tSTO, tSHS2, tFTO2, tFHS2, and tSTO2 (N-by-1
+%                    vectors, in seconds)
+%     markerData   - orientedLabTimeSeries containing kinematic marker
+%                    data for the trial
+%     angleData    - labTimeSeries containing limb angle data, or []
+%                    if angle data is not available
+%     s            - Char specifying the slow-belt leg ('L' or 'R')
+%
+%   Outputs:
+%     out - parameterSeries object containing all spatial parameters
+%
+%   Toolbox Dependencies:
+%     None
+%
+%   See also: computeTemporalParameters, computeForceParameters,
+%     computeHreflexParameters, parameterSeries, calcParameters
+
+arguments
+    strideEvents (1,1) struct
+    markerData
+    angleData
+    s            (1,:) char
+end
 
 %% Gait Stride Event Times
 timeSHS  = strideEvents.tSHS;   % slow heel strike event times
@@ -21,10 +44,11 @@ timeFHS2 = strideEvents.tFHS2;  % 2nd fast heel strike event times
 timeSTO2 = strideEvents.tSTO2;  % 2nd slow toe off event times
 eventTimes = [timeSHS timeFTO timeFHS timeSTO ...
     timeSHS2 timeFTO2 timeFHS2 timeSTO2];
-% numbers correspond to the column of the 'eventTimes' matrix
-SHS = 1; FTO = 2; FHS = 3; STO = 4; SHS2 = 5; FTO2 = 6; FHS2 = 7; STO2 = 8;
+% Column indices into the eventTimes matrix (named constants)
+SHS  = 1;  FTO  = 2;  FHS  = 3;  STO  = 4;
+SHS2 = 5;  FTO2 = 6;  FHS2 = 7;  STO2 = 8;
 
-%% Labels & Descriptions
+%% Labels and Descriptions
 aux = { ...
     'direction',                    '-1 if walking towards window, 1 if walking towards door (implemented for OG bias removal and coordinate rotation)'; ...
     'hipPos',                       'mid hip position at SHS. NOT: average hip pos of stride (should be nearly constant on treadmill - implemented for OG bias removal) (in mm)'; ...
@@ -143,57 +167,52 @@ aux = { ...
     % 'avgRotation',                  'Angle that the coordinates were rotated by';...
     };
 
-paramLabels = aux(:,1);
-description = aux(:,2);
+paramLabels = aux(:, 1);
+description = aux(:, 2);
 
-%% Detect Any Markers at Origin (0,0,0) & Set Data to 'NaN'
-[dd,ll] = markerData.getOrientedData();
-dd = permute(dd,[1 3 2]);
-ee = all(dd == 0,2);
+%% Detect Markers at the Origin and Set Data to NaN
+[dd, ll] = markerData.getOrientedData();
+dd = permute(dd, [1 3 2]);
+ee = all(dd == 0, 2);
 if any(ee(:))
-    msg = ['Markers were reconstructed at the origin. Setting to NaN ' ...
-        'for spatial parameter computation.'];
-    for ii = 1:size(ee,3)
-        if any(ee(:,1,ii)) && sum(ee(:,1,ii)) * markerData.sampPeriod > 1
+    msg = ['Markers were reconstructed at the origin. Setting ' ...
+        'to NaN for spatial parameter computation.'];
+    for ii = 1:size(ee, 3)
+        if any(ee(:, 1, ii)) && ...
+                sum(ee(:, 1, ii)) * markerData.sampPeriod > 1
             msg = [msg ' ' ll{ii} ' was at origin for ' ...
-                num2str(sum(ee(:,1,ii)) * markerData.sampPeriod) 's.'];
+                num2str(sum(ee(:, 1, ii)) * markerData.sampPeriod) 's.'];
         end
     end
     warning(msg);
 end
 
-ee = repmat(ee,1,3,1);
+ee = repmat(ee, 1, 3, 1);
 markerData.Data(ee) = NaN;
-dd = markerData.getOrientedData;
-dd = permute(dd,[1 3 2]);
-ee = all(dd == 0,2);
+dd = markerData.getOrientedData();
+dd = permute(dd, [1 3 2]);
+ee = all(dd == 0, 2);
 if any(ee(:))
     error('Setting markers at the origin to NaN did not work.');
 end
 
-%% Get Rotated Data
-[rotatedMarkerData,sAnkFwd,fAnkFwd,sAnk2D,fAnk2D,sAngle,fAngle, ...
-    direction,hipPos,sAnk_fromAvgHip,fAnk_fromAvgHip] = ...
-    getKinematicData(eventTimes,markerData,angleData,s);
-[rotatedMarkerDataAbs,sAnkFwdAbs,fAnkFwdAbs,sAnk2DAbs,fAnk2DAbs, ...
-    sAngleAbs,fAngleAbs,directionAbs,hipPosSHSAbs, ...
-    sAnk_fromAvgHipAbs,fAnk_fromAvgHipAbs] = ...
-    getKinematicDataAbs(eventTimes,markerData,angleData,s);
+%% Get Rotated Kinematic Data
+[rotatedMarkerData, sAnkFwd, fAnkFwd, sAnk2D, fAnk2D, sAngle, fAngle, ...
+    direction, hipPos, sAnk_fromAvgHip, fAnk_fromAvgHip] = ...
+    getKinematicData(eventTimes, markerData, angleData, s);
+[rotatedMarkerDataAbs, sAnkFwdAbs, fAnkFwdAbs, sAnk2DAbs, fAnk2DAbs, ...
+    sAngleAbs, fAngleAbs, directionAbs, hipPosSHSAbs, ...
+    sAnk_fromAvgHipAbs, fAnk_fromAvgHipAbs] = ...
+    getKinematicDataAbs(eventTimes, markerData, angleData, s);
 
 %% Compute Intralimb Spatial Parameters
-if strcmp(s,'L')        % if slow leg is left, ...
-    f = 'R';            % fast is right
-elseif strcmp(s,'R')    % if slow leg is right, ...
+if strcmp(s, 'L')           % if slow leg is left, ...
+    f = 'R';                % fast is right
+elseif strcmp(s, 'R')       % if slow leg is right, ...
     f = 'L';
-else                    % otherwise, invalid leg ID
-    error('Invalid slow leg input argument, must be ''R'' or ''L''');
+else                        % otherwise, invalid leg ID
+    error('Invalid slow leg input argument, must be ''R'' or ''L''.');
 end
-
-% step lengths (1D)
-stepLengthSlow = sAnkFwd(:,SHS2) - fAnkFwd(:,SHS2); %If sAnkFwd and fAnkFwd are measured with respect to the same reference, this is the same as just subtracting the marker positions
-stepLengthFast = fAnkFwd(:,FHS) - sAnkFwd(:,FHS);
-takeOffLengthSlow = sAnkFwd(:,STO) - fAnkFwd(:,STO);
-takeOffLengthFast = fAnkFwd(:,FTO) - sAnkFwd(:,FTO);
 
 %ALTERNATIVE COMPUTATION WAY: doesn't use HIP, so HIP loss is not an issue
 %(HIP value doesn't affect tis computation, but since it is used as
@@ -269,24 +288,32 @@ alphaSlow_fromAvgHip = -1 * sAnk_fromAvgHip(:,SHS2);
 xTemp_fromAvgHip = -1 * fAnk_fromAvgHip(:,SHS);
 xSlow_fromAvgHip = -1 * sAnk_fromAvgHip(:,FHS);
 xFast_fromAvgHip = -1 * fAnk_fromAvgHip(:,SHS2);
+% Step lengths (1D).
+% If sAnkFwd and fAnkFwd are measured with respect to the same
+% reference, this equals the difference of the marker positions.
+stepLengthSlow    = sAnkFwd(:, SHS2) - fAnkFwd(:, SHS2);
+stepLengthFast    = fAnkFwd(:, FHS)  - sAnkFwd(:, FHS);
+takeOffLengthSlow = sAnkFwd(:, STO)  - fAnkFwd(:, STO);
+takeOffLengthFast = fAnkFwd(:, FTO)  - sAnkFwd(:, FTO);
+
 
 %% Compute Interlimb Spatial Parameters
-stepLengthDiff = stepLengthFast - stepLengthSlow;
-stepLengthAsym = stepLengthDiff ./ (stepLengthFast + stepLengthSlow);
+stepLengthDiff   = stepLengthFast   - stepLengthSlow;
+stepLengthAsym   = stepLengthDiff  ./ (stepLengthFast + stepLengthSlow);
 stepLengthDiff2D = stepLengthFast2D - stepLengthSlow2D;
-stepLengthAsym2D = ...
-    stepLengthDiff2D ./ (stepLengthFast2D + stepLengthSlow2D);
+stepLengthAsym2D = stepLengthDiff2D ./ ...
+    (stepLengthFast2D + stepLengthSlow2D);
 angularSpreadDiff = omegaFast - omegaSlow;
 angularSpreadAsym = angularSpreadDiff ./ (omegaFast + omegaSlow);
-Sout = (alphaFast - alphaSlow) ./ (alphaFast + alphaSlow);
-Serror = alphaRatioSlow - alphaRatioFast;
+Sout     = (alphaFast - alphaSlow) ./ (alphaFast + alphaSlow);
+Serror   = alphaRatioSlow - alphaRatioFast;
 SerrorOld = alphaRatioFast ./ alphaRatioSlow;
-Sgoal = (stanceRangeFast - stanceRangeSlow) ./ ...
+Sgoal    = (stanceRangeFast - stanceRangeSlow) ./ ...
     (stanceRangeFast + stanceRangeSlow);
 centerSlow = (alphaAngSlow + betaAngSlow) ./ 2;
 centerFast = (alphaAngFast + betaAngFast) ./ 2;
 angleOfOscillationAsym = centerFast - centerSlow;
-Xasym = Xdiff ./ (stepLengthFast + stepLengthSlow);
+Xasym    = Xdiff ./ (stepLengthFast + stepLengthSlow);
 alphaAsym = alphaDiff ./ (stepLengthFast + stepLengthSlow);
 %phase shift (using angles)
 % slowlimb=sAngle(indSHS:indSHS2);
@@ -294,7 +321,7 @@ alphaAsym = alphaDiff ./ (stepLengthFast + stepLengthSlow);
 % slowlimb=slowlimb-mean(slowlimb);
 % fastlimb=fastlimb-mean(fastlimb);
 % % Circular correlation
-% phaseShift=circCorr(slowlimb,fastlimb);
+% phaseShift = circCorr(slowlimb, fastlimb);
 %
 % %phase shift (using marker locations)
 % slowlimb=sAnkPos(indSHS:indSHS2);
